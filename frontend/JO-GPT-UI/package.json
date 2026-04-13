@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "electron-debug": "^4.1.0",
+    "electron-devtools-installer": "^4.0.0",
+    "electron-reloader": "^1.2.3"
+  }
+}

@@ -1,0 +1,64 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.13'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+description = 'JO_GPT_PROGRAM'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+dependencies {
+    // 1. Spring Boot Starters: 서비스 운영에 필요한 핵심 라이브러리들
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'      // 데이터베이스 ORM(JPA) 지원
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'    // Redis 캐시 및 데이터 구조 지원
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client' // 구글, 카카오 등 소셜 로그인 기능
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'     // 서버사이드 템플릿 엔진 (HTML 렌더링)
+    implementation 'org.springframework.boot:spring-boot-starter-web'           // 내장 톰캣 포함, 웹 MVC 핵심 기능 (webmvc 대체)
+    implementation 'org.springframework.boot:spring-boot-starter-validation'    // @Valid 등 데이터 유효성 검사
+
+    // 2. 추가 라이브러리 및 유틸리티
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'      // Thymeleaf에서 보안(Security) 관련 태그 사용
+    implementation 'org.testng:testng:6.9.6'                                   // 테스트 프레임워크 (필요 시 JUnit과 병행 가능)
+    implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.9.0'
+    implementation project(':MembersSecurity')    // TSID(분산 ID) 등 고급 Hibernate 기능 지원
+
+    // 3. Lombok: 반복되는 Getter/Setter 등의 코드를 줄여주는 라이브러리
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'             // 개발 시 자동 재시작 등 편의 기능
+
+    // 4. 데이터베이스 및 보안 (JWT)
+    runtimeOnly 'com.mysql:mysql-connector-j'                                   // MySQL 접속 드라이버
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.5'                           // JWT 생성 및 검증 API
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'                             // JWT 구현체
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5'                          // JWT의 JSON 처리(Jackson) 지원
+
+    // 5. 테스트 의존성 (표준화)
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'      // 통합 테스트 환경 (JUnit, Mockito 등 포함)
+    testImplementation 'org.springframework.security:spring-security-test'      // 보안 관련 로직 테스트 지원
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    /*실시간 알림*/
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    implementation project(':EntityCom')
+}
+tasks.named('test') {
+    useJUnitPlatform()
+}

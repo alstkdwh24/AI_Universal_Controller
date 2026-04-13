@@ -1,0 +1,19 @@
+server:
+  port: 8076
+
+spring:
+  application:
+    name: AgentProgram
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/joGpt?serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useSSL=false
+    username: root
+    password: ${joGptPw}
+  output:
+    ansi:
+      enabled: always
+  devtools:
+    livereload:
+      port: 35731
+
+

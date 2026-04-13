@@ -1,0 +1,1 @@
+ALTER TABLE my_chat MODIFY my_chat_contents LONGTEXT NOT NULL;
