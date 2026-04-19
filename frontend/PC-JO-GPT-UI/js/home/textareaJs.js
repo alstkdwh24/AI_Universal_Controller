@@ -1,5 +1,19 @@
 
 document.addEventListener('DOMContentLoaded', () => {
+
+    // 토큰 유효성 검사 함수
+    function getValidToken() {
+        const raw = localStorage.getItem('ACCESS_TOKEN');
+        const token = (raw || '').trim();
+        // JWT 형식: header.payload.signature (점 2개)
+        if (!token || token.split('.').length !== 3) {
+            localStorage.removeItem('ACCESS_TOKEN'); // 오염된 값 정리
+            return null;
+        }
+        else {
+            return token;
+        }
+    }
     let showChat = localStorage.getItem('showChat');
     let realBoxFont = document.querySelector('.realBoxFont');
     const myGemini = document.querySelector(".my-gemini-talk")
@@ -8,7 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const tpl = document.getElementById('tpl-gpt-content');
     const myGeminiTalk = document.querySelector('.my-gemini-talk');
     const tplLoading = document.getElementById('tpl-loading');
-    const token = localStorage.getItem('ACCESS_TOKEN');
+    const token = getValidToken();
+    console.log("tokenssss {}", token);
 
     console.log(CONFIG.CUSTOM_SCHEME);
     /*textarea 내용 전송*/
@@ -43,8 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!textarea.value.trim()) {
             return;
         }
-        console.log(textarea.value);
-        let token = localStorage.getItem('ACCESS_TOKEN');
+        const token = getValidToken();
+        console.log("tokensssss:", token);
 
 
         if (token != null) {
@@ -76,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-//내 대화를 말풍선으로 보여주기 위한
+    //내 대화를 말풍선으로 보여주기 위한
     function MyContents(myContents) {
         const myGeminiTalk = document.querySelector('.my-gemini-talk');
         const tpl = document.getElementById('tpl-my-content');
@@ -85,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         myGeminiTalk.appendChild(clone);
     }
 
-//gpt 대화를 말품선으로 보여주기 위한
+    //gpt 대화를 말품선으로 보여주기 위한
     function GPTContents(gptContents) {
         //template 요소의 content를 복제하여 새로운 노드 생성
         const clone = tpl.content.cloneNode(true)
@@ -99,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const clone = tplLoading.content.cloneNode(true);
         myGeminiTalk.appendChild(clone);
-        document.getElementById('start-loading').scrollIntoView({behavior: 'smooth'});
+        document.getElementById('start-loading').scrollIntoView({ behavior: 'smooth' });
     }
 
     /*로딩 제거*/
@@ -129,26 +144,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchSendMessage(token, myContents) {
+        console.log("request token =", myContents, "dotCount=", (token || "").split(".").length - 1);
+
+        console.log("fetchSendMessage 토큰:", token);
         showLoading();
         // 3. 채팅방 생성
         const response2 = await fetch(CONFIG.API_CONTENTS_URL + '/contents/chatRoom', {
             method: "POST",
             headers: {
-                'Authorization': 'Bearer ' + token,
+                'Authorization': `Bearer ` + token,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({myChatContents: myContents})
+            body: JSON.stringify({ myChatContents: myContents })
         })
         const showChatKey = await response2.text(); // json() 대신 text()
         console.log("showChatKey {}", showChatKey);
-                localStorage.setItem('showChat', showChatKey);
+        localStorage.setItem('showChat', showChatKey);
         return gptResponse(myContents)
     }
 
     /*채팅방 만들어지고 메시지 보낼때*/
     function twoSendContents(showChat) {
         console.log("showChatss {}", showChat);
-        let token = localStorage.getItem('ACCESS_TOKEN');
+        const token = getValidToken();
+
 
         if (!textarea.value.trim()) {
             return;
@@ -169,14 +188,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function twoSendContentsAjax(token,myContents, showChat) {
-        showLoading();
+    async function twoSendContentsAjax(token, myContents, showChat) {
 
+        showLoading();
         const response3 = await fetch(CONFIG.API_CONTENTS_URL + '/contents/myContents', {
             method: "POST",
             headers: {
-                'Authorization': 'Bearer ' + token,
-                'Content-Type': 'application/json'
+                'Authorization': `Bearer ${token}`, // 키 이름은 Authorization, 값은 Bearer 한 칸 띄우고 토큰
+                                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 myChatContents: myContents
@@ -206,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 'Authorization': 'Bearer ' + token,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({myChatContents: myContents})
+            body: JSON.stringify({ myChatContents: myContents })
 
         });
         const data = await response.json(); // 본문을 JSON으로 파씽을 해야됨
