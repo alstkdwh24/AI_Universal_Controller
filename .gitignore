@@ -3,13 +3,15 @@
 
 
 
-<<<<<<< HEAD
 HELP.md
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+
+## Docker ###폴더 관련
+docker/
 
 ### STS ###
 .apt_generated
@@ -83,7 +85,9 @@ jspm_packages/
 *.apk
 *.properties
 *.yml
-=======
+*.json
+*.yaml
+
 # Compiled class file
 *.class
 
