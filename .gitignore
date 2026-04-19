@@ -78,3 +78,5 @@ jspm_packages/
 *.apk
 *.properties
 *.yml
+*.json
+*.yaml
