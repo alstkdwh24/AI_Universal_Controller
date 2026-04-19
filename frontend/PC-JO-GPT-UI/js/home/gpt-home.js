@@ -76,6 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.electronAPI && window.electronAPI.onAuthSuccess) {
         window.electronAPI.onAuthSuccess(async (token) => {
             if (token) {
+                
+                console.log("토큰 수신:", token);
                 localStorage.setItem('ACCESS_TOKEN', token);
 
                 // 암호화 파일로도 저장 (자동 로그인 용) 앱을 껏다 켜도 getToken으로 암호화된 토큰을 복구해서 자동 로그인이 가능해진다.
