@@ -5,6 +5,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+## Docker ###폴더 관련
+docker/
+
 ### STS ###
 .apt_generated
 .classpath
