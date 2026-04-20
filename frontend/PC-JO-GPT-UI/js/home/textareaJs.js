@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // JWT 형식: header.payload.signature (점 2개)
         if (!token || token.split('.').length !== 3) {
             localStorage.removeItem('ACCESS_TOKEN'); // 오염된 값 정리
+            localStorage.removeItem("showChat");
             return null;
         }
         else {
@@ -160,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const showChatKey = await response2.text(); // json() 대신 text()
         console.log("showChatKey {}", showChatKey);
         localStorage.setItem('showChat', showChatKey);
-        return gptResponse(myContents)
+        return gptResponse(myContents, token)
     }
 
     /*채팅방 만들어지고 메시지 보낼때*/
@@ -195,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
             method: "POST",
             headers: {
                 'Authorization': `Bearer ${token}`, // 키 이름은 Authorization, 값은 Bearer 한 칸 띄우고 토큰
-                                'Content-Type': 'application/json'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 myChatContents: myContents
@@ -207,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!response3.ok) {
             throw new Error(`HTTP error! status: ${response3.status}`);
         }
-        const response = gptResponse(myContents).then(response => {
+        const response = gptResponse(myContents, token).then(response => {
             hideLoading();
             return response;
         }).catch(error => {
@@ -218,7 +219,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function gptResponse(myContents) {
+    async function gptResponse(myContents, token) {
+        console.log("gptResponse 토큰:", token);
         const response = await fetch(CONFIG.API_CONTENTS_URL + '/contents/gptContents', {
             method: "POST",
             headers: {
