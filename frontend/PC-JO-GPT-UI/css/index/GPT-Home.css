@@ -6,6 +6,7 @@
     font-style: normal;
     font-display: swap;
 }
+
 * {
     padding: 0;
     margin: 0;
@@ -29,17 +30,19 @@ body {
 
 /*사이트바*/
 .sideBar {
-    width: 60px;
+    width: 4rem;
     height: 100%;
     /*
     height: 100vh; !* 화면 전체 높이 *!
     */
     background: #DDEBFF;
     display: flex;
-    position: relative; /* ⭐ 기준점 */
+    position: relative;
+    /* ⭐ 기준점 */
     flex-direction: column;
 
 }
+
 /*사이드 버튼 공통요소*/
 .same-font {
     font-size: 24px;
@@ -75,7 +78,7 @@ body {
     background-color: transparent;
 }
 
-.sideBarImgTwo > img {
+.sideBarImgTwo>img {
     background-color: transparent;
     width: 24px;
     height: 24px;
@@ -105,16 +108,18 @@ body {
     align-items: center;
 }
 
-.sideBarButtonImg > span {
+.sideBarButtonImg>span {
     width: 50px;
     height: 50px;
-    font-size: 32px; /* scale: 1.4 대신 font-size 사용 */
+    font-size: 32px;
+    /* scale: 1.4 대신 font-size 사용 */
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
     color: black;
-    overflow: hidden; /* 텍스트가 삐져나가지 않도록 설정 */
+    overflow: hidden;
+    /* 텍스트가 삐져나가지 않도록 설정 */
 
 }
 
@@ -134,7 +139,8 @@ body {
 }
 
 .sideBarButton {
-    position: absolute; /* ⭐ sideBar 기준으로 위치 잡음 */
+    position: absolute;
+    /* ⭐ sideBar 기준으로 위치 잡음 */
     top: -226px;
     left: -90%;
     transform: translateX(-500%);
@@ -176,7 +182,7 @@ body {
     justify-content: center;
 }
 
-.topBar-left > h2 {
+.topBar-left>h2 {
     padding: 1.5rem;
     font-weight: bold;
     font-size: 2rem;
@@ -190,11 +196,14 @@ body {
 
 .topBar-right {
     height: 100%;
-    flex: 1; /* 남은 공간 모두 차지 */
+    flex: 1;
+    /* 남은 공간 모두 차지 */
     display: flex;
-    justify-content: flex-end; /* 오른쪽 정렬 */
+    justify-content: flex-end;
+    /* 오른쪽 정렬 */
     align-items: center;
-    padding-right: 20px; /* 오른쪽 여백 */
+    padding-right: 20px;
+    /* 오른쪽 여백 */
 }
 
 .topBar-rightLeft {
@@ -207,7 +216,7 @@ body {
 }
 
 /*input label */
-.topBar-rightLeft > label {
+.topBar-rightLeft>label {
     width: 98%;
     height: 60%;
     display: flex;
@@ -216,7 +225,7 @@ body {
 }
 
 /*input*/
-.topBar-rightLeft > label > input {
+.topBar-rightLeft>label>input {
     width: 100%;
     height: 100%;
     border-radius: 20px;
@@ -226,7 +235,8 @@ body {
     height: 100%;
     display: flex;
     align-items: center;
-    gap: 12px; /* 버튼 사이 간격 */
+    gap: 12px;
+    /* 버튼 사이 간격 */
 }
 
 .topBar-rightRightLeftButton {
@@ -319,7 +329,8 @@ body {
 .input-wrapper {
     display: flex;
     flex-direction: column;
-    width: 100%; /* 반응형이면 width:100%; max-width:260px */
+    width: 100%;
+    /* 반응형이면 width:100%; max-width:260px */
     min-height: 100px;
 
     border: 1px solid #ccc;
@@ -333,19 +344,23 @@ body {
     border: none;
     height: 70%;
     min-height: 56px;
-    padding: 12px 12px 0 12px; /* 오른쪽 버튼 공간 */
+    padding: 12px 12px 0 12px;
+    /* 오른쪽 버튼 공간 */
     border-radius: 20px;
     resize: none;
-    overflow-y: hidden; /* ✅ 세로 스크롤 대신 높이로 증가 */
+    overflow-y: hidden;
+    /* ✅ 세로 스크롤 대신 높이로 증가 */
     overflow-x: hidden;
     box-sizing: border-box;
     font-size: 16px;
-    font-family: 'Cafe24Ssurround', sans-serif;  /* ← 여기서 적용 */
+    font-family: 'Cafe24Ssurround', sans-serif;
+    /* ← 여기서 적용 */
 
 }
 
 .fake-input:focus {
-    outline: none; /*  검은 테두리 제거 */
+    outline: none;
+    /*  검은 테두리 제거 */
 }
 
 .search-div {
@@ -357,7 +372,8 @@ body {
 
 .search-btn {
     right: 12px;
-    bottom: 12px; /* ✅ 하단 고정 */
+    bottom: 12px;
+    /* ✅ 하단 고정 */
     width: 40px;
     height: 40px;
     border: none;
@@ -424,7 +440,8 @@ body {
     .sideBar {
         width: 0;
         min-width: 0;
-        height: 100vh; /* 화면 전체 높이 */
+        height: 100vh;
+        /* 화면 전체 높이 */
         background: #DDEBFF;
 
     }
@@ -456,7 +473,7 @@ body {
         justify-content: center;
     }
 
-    .topBar-left > h2 {
+    .topBar-left>h2 {
         font-weight: normal;
 
     }
@@ -482,7 +499,7 @@ body {
     }
 
     /*input label */
-    .topBar-rightLeft > label {
+    .topBar-rightLeft>label {
         width: 98%;
         height: 60%;
         display: flex;
@@ -491,7 +508,7 @@ body {
     }
 
     /*input*/
-    .topBar-rightLeft > label > input {
+    .topBar-rightLeft>label>input {
         width: 100%;
         height: 100%;
         border-radius: 20px;
@@ -549,12 +566,12 @@ body {
         font-size: 30px;
     }
 
-    .realBox > label {
+    .realBox>label {
         width: 80%;
         height: 40%;
     }
 
-    .realBox > label > input {
+    .realBox>label>input {
         width: 100%;
         height: 100%;
         border-radius: 20px;
@@ -573,10 +590,11 @@ body {
 }
 
 /*폰트 적용 x*/
-.fontFamily{
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;}
+.fontFamily {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+}
 
 /*폰트적용 x*/
-#fontFamily{
+#fontFamily {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
 }
