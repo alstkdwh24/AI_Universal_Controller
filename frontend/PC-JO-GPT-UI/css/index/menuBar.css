@@ -53,7 +53,7 @@
 
 /* sideBarBottomActive 토글 */
 .sideBarImgActive {
-    width: 100%;
+    width: 16rem;
     height: 3rem;
     padding: 0;
     border: none;
@@ -61,7 +61,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: row;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     background-color: transparent;
 }
@@ -69,8 +69,7 @@
 /* sideBarImgActive 토글을 열면 나오는 css*/
 
 .sideBarImgActive>.sideButton {
-    width: 60px;
-    width: 100%;
+    width: 20rem;
     height: 3rem;
     padding: 0;
     border: none;
@@ -78,7 +77,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: row;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     background-color: transparent;
 }
@@ -87,7 +86,27 @@
     width: calc(100% - 60px);
 }
 
+/* sideBarImgActive sideButton sideBarText 토글을 열면 나오는 css */
+.sideBarImgActive>.sideButton>.sideBarText {
+    display: flex;
+}
+
 /* 아이콘 크기sideBarImg */
 i {
     width: 60px;
+}
+
+/* sideBar-bottom 토글  */
+.sideBar-bottomActive {
+    width: 16rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: auto;
+    margin-bottom: 20px;
+}
+
+.sideBar-bottomActive>.sideBarImgActive>.sideBarText {
+    display: flex;
 }
