@@ -5,15 +5,15 @@
     /* ⭐ 기준점 */
     flex-direction: column;
     z-index: 1;
-    width: 20rem;
-    height: 100%;
+    width: 16rem;
+    height: 100vh;
     background: #DDEBFF;
 }
 
 
 /* contentsActive 토글 */
 .contentActive {
-    width: calc(100vw - 20rem);
+    width: calc(100vw - 16rem);
     background: #F6FAFF;
     height: 100vh;
     display: flex;
@@ -24,7 +24,7 @@
 
 /* topBarActive 토글 */
 .topBarActive {
-    width: calc(100vw - 20rem);
+    width: calc(100vw - 16rem);
     background: #F6FAFF;
     height: 8vh;
     display: flex;
@@ -33,7 +33,7 @@
 
 /* realContentActive 토글 */
 .realContentActive {
-    width: calc(100vw - 20rem);
+    width: calc(100vw - 16rem);
     background: #F6FAFF;
     min-height: calc(100vh - 71px);
     display: flex;
@@ -45,6 +45,7 @@
 
 /* sideBarTopActive 토글 */
 .sideBarTopActive {
+    width: 16rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -52,14 +53,41 @@
 
 /* sideBarBottomActive 토글 */
 .sideBarImgActive {
-    width: 40px;
+    width: 100%;
     height: 3rem;
     padding: 0;
     border: none;
     cursor: pointer;
     overflow: hidden;
     display: flex;
+    flex-direction: row;
     justify-content: center;
     align-items: center;
     background-color: transparent;
+}
+
+/* sideBarImgActive 토글을 열면 나오는 css*/
+
+.sideBarImgActive>.sideButton {
+    width: 60px;
+    width: 100%;
+    height: 3rem;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    background-color: transparent;
+}
+
+.sideBarImgTexts {
+    width: calc(100% - 60px);
+}
+
+/* 아이콘 크기sideBarImg */
+i {
+    width: 60px;
 }
