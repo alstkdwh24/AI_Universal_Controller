@@ -9,6 +9,7 @@ const topBar = document.querySelector('.topBar');
 const sideBarTop = document.querySelector('.sideBar-top');
 const sideBarImg = document.querySelectorAll(".sideBarImg");
 const sideButton = document.querySelector('.sideButton');
+const sideBarBottom = document.querySelector('.sideBar-bottom');
 
 document.addEventListener('DOMContentLoaded', () => {
     menuBar.addEventListener('click', () => {
@@ -26,6 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
         sideBarTop.classList.toggle('sideBar-top');
         sideButton.classList.toggle('sideButtonActive');
         sideButton.classList.toggle('sideButton');
+        sideBarBottom.classList.toggle('sideBar-bottomActive');
+        sideBarBottom.classList.toggle('sideBar-bottom');
 
 
         sideBarImg.forEach(img => {
