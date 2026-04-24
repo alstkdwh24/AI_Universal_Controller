@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 챗봇 서비스</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <div class="chat-wrapper">
+    <header class="chat-header">
+      <h1>🤖 AI 챗봇</h1>
+      <button id="resetBtn" class="btn-reset" title="대화 초기화">🗑 초기화</button>
+    </header>
+
+    <main id="chatBox" class="chat-box" aria-live="polite">
+      <div class="message assistant">
+        <div class="bubble">안녕하세요! 무엇이든 물어보세요 😊</div>
+      </div>
+    </main>
+
+    <footer class="chat-footer">
+      <form id="chatForm" autocomplete="off">
+        <textarea
+          id="userInput"
+          class="input-box"
+          placeholder="메시지를 입력하세요... (Shift+Enter로 줄바꿈)"
+          rows="1"
+          aria-label="메시지 입력"
+        ></textarea>
+        <button type="submit" id="sendBtn" class="btn-send" aria-label="전송">
+          ➤
+        </button>
+      </form>
+    </footer>
+  </div>
+
+  <script src="/static/js/chat.js"></script>
+</body>
+</html>
