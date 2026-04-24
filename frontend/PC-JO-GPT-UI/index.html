@@ -37,23 +37,48 @@
     <!-- 사이드바 부분 -->
     <div class="sideBar">
         <div class="sideBar-top">
-            <button class="sideBarImg"><i class="fa fa-bars same-font menuBar"></i></button>
-            <button class="sideBarImg" id="homeBtn"><i class="fa fa-home same-font"></i></button>
-            <button class="sideBarImg chatTing"><i class="fa fa-comment same-font"></i></button>
-
-            <button class="sideBarImg"><i class="bi bi-grid same-font"></i></button>
-            <button class="sideBarImg same-font">
-                <i class="fa fa-plus"></i>
+            <button class="sideBarImg">
+                <div class="sideButton "><i class="fa fa-bars same-font menuBar icon-controller"></i>
+                    <div class="sideBarText">메뉴</div>
+                </div>
             </button>
-            <button class="sideBarImg"><i class="fa fa-ellipsis-h same-font"></i></button>
+            <button class="sideBarImg" id="homeBtn">
+                <div class="sideButton "><i class="fa fa-plus same-font icon-controller"></i>
+                    <div class="sideBarText">홈</div>
+                </div>
+            </button>
+            <button class="sideBarImg chatTing">
+                <div class="sideButton "><i class="fa fa-comment same-font icon-controller"></i>
+                    <div class="sideBarText">채팅</div>
+                </div>
+            </button>
+
+            <button class="sideBarImg">
+                <div class="sideButton "><i class="bi bi-grid same-font icon-controller"></i>
+                    <div class="sideBarText">모델</div>
+                </div>
+            </button>
+
+            <button class="sideBarImg">
+                <div class="sideButton "><i class="fa fa-ellipsis-h same-font icon-controller"></i>
+                    <div class="sideBarText">더보기</div>
+                </div>
+            </button>
         </div>
         <!-- 하단 설정 아이콘 -->
         <div class="sideBar-bottom">
             <button class="sideBarImg sideBell">
-                <i class="fa fa-bell" style="font-size: 24px; color: #555;"></i>
+                <div class="icon-controller">
+                    <i class="fa fa-bell" style="font-size: 24px; color: #555;"></i>
+                </div>
+                <div class="sideBarText">알림</div>
             </button>
             <button class="sideBarImg">
-                <i class="fa fa-cog" style="font-size: 24px; color: #555;"></i>
+                <div class="icon-controller">
+
+                    <i class="fa fa-cog" style="font-size: 24px; color: #555;"></i>
+                </div>
+                <div class="sideBarText">설정</div>
             </button>
         </div>
     </div>
