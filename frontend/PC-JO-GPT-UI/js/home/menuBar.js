@@ -1,3 +1,4 @@
+
 const menuBar = document.querySelector('.menuBar');
 const sideBar = document.querySelector('.sideBar');
 const activeBar = document.querySelector('.active');
@@ -6,7 +7,9 @@ const contents = document.querySelector('.content');
 const realContent = document.querySelector('.realContent');
 const topBar = document.querySelector('.topBar');
 const sideBarTop = document.querySelector('.sideBar-top');
-const sideBarImg = document.querySelector(".sideBarImg");
+const sideBarImg = document.querySelectorAll(".sideBarImg");
+const sideButton = document.querySelector('.sideButton');
+const sideBarBottom = document.querySelector('.sideBar-bottom');
 
 document.addEventListener('DOMContentLoaded', () => {
     menuBar.addEventListener('click', () => {
@@ -22,13 +25,37 @@ document.addEventListener('DOMContentLoaded', () => {
         topBar.classList.toggle('topBarActive');
         sideBarTop.classList.toggle('sideBarTopActive');
         sideBarTop.classList.toggle('sideBar-top');
-        sideBarImg.classList.toggle('sideBarImgActive');
-        sideBarImg.classList.toggle('sideBarImg');
-        sideBarTop.style.width = '60px';
-        sideBarImg.style.width = '20rem';
+        sideButton.classList.toggle('sideButtonActive');
+        sideButton.classList.toggle('sideButton');
+        sideBarBottom.classList.toggle('sideBar-bottomActive');
+        sideBarBottom.classList.toggle('sideBar-bottom');
 
-        sideBar.style.display = 'flex';
-        sideBar.style.alignItems = 'flex-start';
+
+        sideBarImg.forEach(img => {
+            // 1. 단일 요소인 사이드바 버튼의 상태는 반복문 외부에서 단 한 번만 토글합니다.
+            if (sideButton) {
+                sideButton.classList.toggle('sideButtonActive');
+                sideButton.classList.toggle('sideButton');
+            }
+            // 2. 다수의 요소인 사이드바 아이콘(sideBarImg)들은 반복문을 돌며 각자의 상태만 토글합니다.
+            if (sideBarImg && sideBarImg.length > 0) {
+                sideBarImg.forEach(img => {
+                    // 여기서 img는 개별 <i> 또는 <img> 요소입니다.
+                    img.classList.toggle('sideBarImgActive');
+                    img.classList.toggle('sideBarImg');
+
+                    // 주의: 이곳에 img.sideButton 과 같은 코드를 넣으면 안 됩니다.
+                });
+            }
+
+
+
+        });
+
+
+
+
+
 
         console.log('Menu bar clicked');
     });
