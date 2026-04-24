@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+pyyaml
+python-dotenv
+langchain
+langchain-chroma
+langchain-google-genai  # Gemini 사용을 위해
+chromadb                # 로컬 벡터 데이터베이스 (추천)
