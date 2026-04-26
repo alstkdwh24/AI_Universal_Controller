@@ -1,7 +1,12 @@
 # 이 코드는 FastAPI에서 **API 엔드포인트(라우터)**를 정의하는 부분이다. Spring의 @RestController와 유사한 역할을 하는 FastAPI의 APIRouter를 사용하여 API 경로와 핸들러 함수를 정의한다.
 
 # 여러 API 엔드포인트를 그룹핑할 수 있는 라우터 객체를 가져옵니다.
+import logging
+from urllib import request
 from fastapi import APIRouter
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 # 요청(Request)과 응답(Response) 데이터 구조(DTO, paydantic 모델)를 정의한 스키마를 가져옵니다.
 from schemas.chat_schema import ChatRequest, ChatResponse
@@ -14,5 +19,6 @@ agent_router = APIRouter(prefix="/agent", tags=["Agent Operations"])
 
 @agent_router.post("/chat", response_model=ChatResponse)
 def chat_with_agent(request: ChatRequest):
-    answer = get_rag_answer(request.question)
+    answer = get_rag_answer(request.message)
+    logger.info(f"Generated answer: {answer}")
     return ChatResponse(answer=answer)
