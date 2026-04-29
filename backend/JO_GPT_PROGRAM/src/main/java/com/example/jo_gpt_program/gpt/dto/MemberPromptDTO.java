@@ -4,19 +4,16 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
+import lombok.Setter;
 
 @Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ShowChatDTO {
-
-    private Long showChatKey;
-
-    private String showMyChatContents;
-
-    private LocalDateTime showChatRegistration;
-
+public class MemberPromptDTO {
+    private Long promptKey;
+    private String promptName;
+    private String promptContent;
+    private Boolean isActive;
 }

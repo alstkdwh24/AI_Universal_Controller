@@ -1,10 +1,27 @@
 package com.example.jo_gpt_program.gpt.service;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.example.entitycom.entity.chat.ShowChat;
+import com.example.entitycom.entity.log.CreateTimeLogs;
+import com.example.entitycom.entity.member.MemberPrompt;
+import com.example.entitycom.entity.member.Members;
+import com.example.entitycom.entity.member.MyChat;
+import com.example.jo_gpt_program.gpt.dto.MemberPromptDTO;
+import com.example.jo_gpt_program.gpt.dto.MyChatDTO;
+import com.example.jo_gpt_program.gpt.dto.ShowChatDTO;
+import com.example.jo_gpt_program.gpt.repository.jpa.CreateTimeRepository;
+import com.example.jo_gpt_program.gpt.repository.jpa.MemberPromptRepository;
+import com.example.jo_gpt_program.gpt.repository.jpa.MyChatRepository;
+import com.example.jo_gpt_program.gpt.repository.jpa.ShowChatRepository;
+import com.example.memberssecurity.member.repository.jpa.MemberRepository;
+import com.example.memberssecurity.security.config.jwt.JWTUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.genai.Client;
+import com.google.genai.types.Content;
+import com.google.genai.types.GenerateContentConfig;
+import com.google.genai.types.GenerateContentResponse;
+import com.google.genai.types.Part;
+import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -12,54 +29,40 @@ import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import com.example.entitycom.entity.chat.ShowChat;
-import com.example.entitycom.entity.log.CreateTimeLogs;
-import com.example.entitycom.entity.member.Members;
-import com.example.entitycom.entity.member.MyChat;
-import com.example.jo_gpt_program.gpt.dto.MyChatDTO;
-import com.example.jo_gpt_program.gpt.dto.ShowChatDTO;
-import com.example.jo_gpt_program.gpt.repository.jpa.CreateTimeRepository;
-import com.example.jo_gpt_program.gpt.repository.jpa.MyChatRepository;
-import com.example.jo_gpt_program.gpt.repository.jpa.ShowChatRepository;
-import com.example.memberssecurity.member.repository.jpa.MemberRepository;
-import com.example.memberssecurity.security.config.jwt.JWTUtils;
-
-import jakarta.transaction.Transactional;
-import lombok.extern.slf4j.Slf4j;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("ALL")
 @Service("contentsService")
 @Slf4j
 public class ContentsService {
 
+        @Value("${spring.llm.key}")
+        private String geminiApiKey;
+
         private final MyChatRepository myChatRepository;
         private final RestTemplate restTemplate;
-
         private final MemberRepository memberRepository;
-
         private final ShowChatRepository showChatRepository;
-
         private final CreateTimeRepository createTimeRepository;
-
         private final ChatClient chatClient;
-
-        private EmbeddingModel embeddingModel;
-
+        private final EmbeddingModel embeddingModel;
         private final VectorStore vectorStore;
-
         private final JWTUtils jwtUtils;
-
         private final ScholarSearchService scholarSearchService;
+        private final MemberPromptRepository memberPromptRepository;
 
         public ContentsService(@Qualifier("myChatRepository") MyChatRepository myChatRepository,
                         RestTemplate restTemplate, MemberRepository memberRepository,
                         ShowChatRepository showChatRepository,
                         CreateTimeRepository createTimeRepository, JWTUtils jwtUtils, ChatClient chatClient,
                         EmbeddingModel embeddingModel, VectorStore vectorStore,
-                        ScholarSearchService scholarSearchService) {
+                        ScholarSearchService scholarSearchService,
+                        MemberPromptRepository memberPromptRepository) {
                 this.restTemplate = restTemplate;
                 this.myChatRepository = myChatRepository;
                 this.memberRepository = memberRepository;
@@ -70,9 +73,10 @@ public class ContentsService {
                 this.vectorStore = vectorStore;
                 this.jwtUtils = jwtUtils;
                 this.scholarSearchService = scholarSearchService;
+                this.memberPromptRepository = memberPromptRepository;
         }
-        /* 유저 정보 불러오기 */
 
+        /* 유저 정보 불러오기 */
         public String userInfo(Long memberKey, MyChatDTO dto) {
                 Optional<Members> members = memberRepository.findByMemberKey(memberKey);
                 Members member = members
@@ -80,10 +84,9 @@ public class ContentsService {
                 log.debug("member={}", member);
                 String response = this.myChat(dto, member);
                 return response;
-
         }
 
-        /* 내가 적은 치탱 BD 저장 */
+        /* 내가 적은 채팅 DB 저장 */
         @Transactional
         public String myChat(MyChatDTO dto, Members member) {
                 Optional<Members> members = memberRepository.findByMemberKey(member.getMemberKey());
@@ -101,52 +104,26 @@ public class ContentsService {
                                 .showChat(showChat1)
                                 .myChatContents(dto.getMyChatContents())
                                 .myChatImage(dto.getMyChatImage())
-                                .createTimeLogs(CreateTimeLogs.builder()
-
-                                                .build()) // 여기서 builder로 생성만 하면, 위에서 추가한 @CreatedDate가 저장 시점에 시간을 자동
-                                                          // 기입한다.
+                                .createTimeLogs(CreateTimeLogs.builder().build())
                                 .build();
 
                 MyChat myChat = myChatRepository.save(chat);
-
                 return myChat.getMyChatContents();
         }
-
-        // /* 제미나이한테 보낼 메시지랑 제미나이 API연결 기존 제미나이 교체 */
-        // public String sendGemini(MyChatDTO dto, String geminiKey) {
-
-        // Map<String, Object> body = Map.of("contents",
-        // List.of(Map.of("parts", List.of(Map.of("text", dto.getMyChatContents())))));
-
-        // ResponseEntity<String> response = restTemplate.postForEntity(
-        // "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key="
-        // + geminiKey,
-        // body, String.class);
-        // log.debug("response gemini :{}", response);
-        // String body2 = response.getBody();
-        // if (body2 == null) {
-        // return "{\"error\": \"No response from Gemini\"}";
-        // }
-
-        // // TODO Auto-generated method stub
-        // return response.getBody();
-        // }
 
         /* 채팅방 만드는 메서드 */
         @Transactional
         public Long createChat(String authHeader, MyChatDTO dto) {
                 Members members = this.authHeader(authHeader);
-                // 1. ShowChat 생성 및 '저장' (save 호출!)
                 ShowChat showChat = ShowChat.builder()
                                 .members(members)
                                 .build();
-                ShowChat showChat1 = showChatRepository.save(showChat); // DB에서 키값을 받아옴
+                ShowChat showChat1 = showChatRepository.save(showChat);
 
                 log.debug("showChat1={}", showChat1.getShowChatKey());
-                // 2. 이제 키값이 있는 showChat을 MyChat에 연결
                 MyChat myChat = MyChat.builder()
                                 .showChat(showChat1)
-                                .member(members) // Member 키도 잊지 말고 넣어주세요!
+                                .member(members)
                                 .myChatContents(dto.getMyChatContents())
                                 .build();
                 myChatRepository.save(myChat);
@@ -171,7 +148,6 @@ public class ContentsService {
                 if (members == null) {
                         throw new RuntimeException("Member not Object: " + members);
                 }
-
                 return members;
         }
 
@@ -182,10 +158,9 @@ public class ContentsService {
                                 .orElseThrow(() -> new RuntimeException("Member not found with key: " + memberKey));
                 log.debug("member={}", member);
                 return member;
-
         }
 
-        // 채팅 리스트 불러오기
+        /* 채팅 리스트 불러오기 */
         @Transactional
         public Set<ShowChatDTO> getChattingList(String authHeader) {
                 Members members = authHeader(authHeader);
@@ -199,8 +174,8 @@ public class ContentsService {
                         log.debug("chatAttachment={}", chat.getChatAttachment());
                 });
 
-                log.debug("showChatReal:{}", showChats.stream());
                 Set<ShowChatDTO> showChatDTOS = showChats.stream().map(chat -> ShowChatDTO.builder()
+                                .showChatKey(chat.getShowChatKey())
                                 .showChatRegistration(
                                                 chat.getCreateTimeLogs() != null && !chat.getCreateTimeLogs().isEmpty()
                                                                 ? chat.getCreateTimeLogs().iterator().next()
@@ -213,60 +188,202 @@ public class ContentsService {
                 return showChatDTOS;
         }
 
-        // AI 관련 코드
-        /* 제미나이한테 보낼 메시지랑 제미나이 API연결 기존 제미나이 교체 */
-        public String sendGeminiAI(MyChatDTO dto, String model, String customPrompt) {
-                return chatClient.prompt() // 사실상 빌더 역할
-                                .system(customPrompt != null ? customPrompt
-                                                : "당신은 JO-GPT 어시스턴트입니다. 항상 한국어로 친절하게 답변하세요.") // 시스템 프롬프트 설정
-                                .user(dto.getMyChatContents()) // 사용자 메시지 설정
-                                .options(GoogleGenAiChatOptions.builder()
-                                                .model(model) // 모델
-                                                .temperature(0.7) // 응답의 창의성 조절
-                                                .maxOutputTokens(1024) // 문장의 길이 제한
-                                                .topP(0.9) // 응답 다양성
-                                                .topK(100) // 다음 단어 후보를 몇개로 제한할지 설정
-                                                .build())
-                                .call()
-                                .content(); // 응답에서 텍스트 콘텐츠 추출
+        /* 채팅방 삭제 (ShowChat cascade로 하위 데이터 전부 삭제) */
+        @Transactional
+        public void deleteChat(String authHeader, Long showChatKey) {
+                Members members = this.authHeader(authHeader);
+                ShowChat showChat = showChatRepository.findShowChatByShowChatKey(showChatKey)
+                                .orElseThrow(() -> new RuntimeException("ShowChat not found: " + showChatKey));
+                if (!showChat.getMembers().getMemberKey().equals(members.getMemberKey())) {
+                        throw new RuntimeException("권한이 없습니다.");
+                }
+                showChatRepository.delete(showChat);
         }
 
-        // ----------------------------------- RAG: 문서 기반 답변
-        // ---------------------------------------------
+        // ----------------------------- 프롬프트 관리 -----------------------------
 
-        public String ragAnswer(MyChatDTO dto) {
-                // 1. 유사 문서 검색
-                List<Document> docs = vectorStore.similaritySearch(
-                                SearchRequest.builder().query(dto.getMyChatContents()).topK(5) // 상위 5개 문서 검색
-                                                .build());
+        /* 내 프롬프트 목록 조회 */
+        public List<MemberPromptDTO> getMyPrompts(String authHeader) {
+                Members members = this.authHeader(authHeader);
+                List<MemberPrompt> prompts = memberPromptRepository.findByMember(members);
+                return prompts.stream()
+                                .map(p -> MemberPromptDTO.builder()
+                                                .promptKey(p.getPromptKey())
+                                                .promptName(p.getPromptName())
+                                                .promptContent(p.getPromptContent())
+                                                .isActive(p.getIsActive())
+                                                .build())
+                                .collect(Collectors.toList());
+        }
 
-                // 2. 컨텍스트 조합
-                String context = docs.stream() // 리스트를 스트림으로 변환
-                                .map(Document::getText) // 2. 각 문서에서 텍스트만
-                                .collect(Collectors.joining("\n---\n")); // 문서들을 구분자와 함께 하나의 문자열로 결합
+        /* 새 프롬프트 저장 */
+        @Transactional
+        public void saveMyPrompt(String authHeader, MemberPromptDTO dto) {
+                Members members = this.authHeader(authHeader);
+                MemberPrompt prompt = MemberPrompt.builder()
+                                .member(members)
+                                .promptName(dto.getPromptName())
+                                .promptContent(dto.getPromptContent())
+                                .build();
+                memberPromptRepository.save(prompt);
+        }
 
-                // 제미나이한테 전달
+        /* 프롬프트 삭제 */
+        @Transactional
+        public void deleteMyPrompt(String authHeader, Long promptKey) {
+                Members members = this.authHeader(authHeader);
+                MemberPrompt prompt = memberPromptRepository.findById(promptKey)
+                                .orElseThrow(() -> new RuntimeException("Prompt not found: " + promptKey));
+                if (!prompt.getMember().getMemberKey().equals(members.getMemberKey())) {
+                        throw new RuntimeException("권한이 없습니다.");
+                }
+                memberPromptRepository.delete(prompt);
+        }
+
+        /* 활성 프롬프트 변경 */
+        @Transactional
+        public void activateMyPrompt(String authHeader, Long promptKey) {
+                Members members = this.authHeader(authHeader);
+                // 기존 활성 프롬프트 비활성화
+                memberPromptRepository.findByMemberAndIsActiveTrue(members)
+                                .ifPresent(p -> p.deactivate());
+                // 새 프롬프트 활성화
+                MemberPrompt prompt = memberPromptRepository.findById(promptKey)
+                                .orElseThrow(() -> new RuntimeException("Prompt not found: " + promptKey));
+                if (!prompt.getMember().getMemberKey().equals(members.getMemberKey())) {
+                        throw new RuntimeException("권한이 없습니다.");
+                }
+                prompt.activate();
+        }
+
+        /* 활성 프롬프트 내용 조회 (내부 헬퍼) */
+        private String getActivePromptContent(String authHeader) {
+                Members members = this.authHeader(authHeader);
+                return memberPromptRepository.findByMemberAndIsActiveTrue(members)
+                                .map(MemberPrompt::getPromptContent)
+                                .orElse(null);
+        }
+
+        // ----------------------------- AI 관련 -----------------------------
+
+        /* Gemini 호출 — 이미지 모델은 SDK 직접 호출, 그 외는 Spring AI ChatClient 사용 */
+        public String sendGeminiAI(MyChatDTO dto, String model, String authHeader) {
+                String customPrompt = getActivePromptContent(authHeader);
+                String systemText = customPrompt != null && !customPrompt.isBlank() ? customPrompt
+                                : "당신은 JO-GPT 어시스턴트입니다. 항상 한국어로 친절하게 답변하세요.";
+
+                /* 이미지 생성 모델: Google GenAI SDK로 직접 호출해야 responseModalities 지정 가능 */
+                if (model.contains("image")) {
+                        return sendGeminiImageDirect(dto.getMyChatContents(), model, systemText);
+                }
+
+                /* 일반 텍스트 모델: Spring AI ChatClient */
                 return chatClient.prompt()
-                                .system("당신은 JO-GPT 어시스턴트입니다. 다음 컨텍스트를 참고하여 질문에 답변하세요:\n" + context)
+                                .system(systemText)
                                 .user(dto.getMyChatContents())
-
+                                .options(GoogleGenAiChatOptions.builder()
+                                                .model(model)
+                                                .temperature(0.7)
+                                                .maxOutputTokens(1024)
+                                                .topP(0.9)
+                                                .topK(100)
+                                                .build())
                                 .call()
                                 .content();
         }
 
-        // 문서 저장 (RAG용) 벡터 데이터베이스에다가 저장하는 메서드
+        /* Google GenAI SDK 직접 호출 — TEXT + IMAGE 모달리티 설정 후 인라인 이미지 추출 */
+        private String sendGeminiImageDirect(String userMessage, String model, String systemText) {
+                Client client = Client.builder().apiKey(geminiApiKey).build();
+
+                /* 시스템 프롬프트는 systemInstruction으로 분리 */
+                Content systemInstruction = Content.builder()
+                                .role("system")
+                                .parts(Part.fromText(systemText))
+                                .build();
+
+                List<Content> contents = List.of(
+                                Content.builder()
+                                                .role("user")
+                                                .parts(Part.fromText(userMessage))
+                                                .build());
+
+                GenerateContentConfig config = GenerateContentConfig.builder()
+                                .systemInstruction(systemInstruction)
+                                .responseModalities("TEXT", "IMAGE")
+                                .maxOutputTokens(2048)
+                                .build();
+
+                log.info("[ImageGen] 요청 모델={}, 프롬프트={}", model, userMessage);
+                GenerateContentResponse response = client.models.generateContent(model, contents, config);
+
+                StringBuilder textBuilder = new StringBuilder();
+                List<Map<String, String>> images = new ArrayList<>();
+
+                response.candidates().orElse(List.of()).forEach(candidate -> candidate.content()
+                                .ifPresent(content -> content.parts().orElse(List.of()).forEach(part -> {
+                                        log.info("[ImageGen] part - text={}, inlineData={}",
+                                                        part.text().isPresent(),
+                                                        part.inlineData().isPresent());
+                                        part.text().ifPresent(textBuilder::append);
+                                        part.inlineData().ifPresent(blob -> blob.data().ifPresent(data -> {
+                                                log.info("[ImageGen] 이미지 추출 성공 mimeType={}, size={}bytes",
+                                                                blob.mimeType().orElse("unknown"), data.length);
+                                                Map<String, String> img = new LinkedHashMap<>();
+                                                img.put("mimeType", blob.mimeType().orElse("image/png"));
+                                                img.put("data", Base64.getEncoder().encodeToString(data));
+                                                images.add(img);
+                                        }));
+                                })));
+
+                log.info("[ImageGen] 결과 - text길이={}, 이미지수={}", textBuilder.length(), images.size());
+                String textContent = textBuilder.toString();
+
+                if (!images.isEmpty()) {
+                        Map<String, Object> result = new LinkedHashMap<>();
+                        result.put("text", textContent);
+                        result.put("images", images);
+                        try {
+                                return new ObjectMapper().writeValueAsString(result);
+                        } catch (Exception e) {
+                                log.error("이미지 응답 직렬화 실패", e);
+                        }
+                }
+
+                return textContent;
+        }
+
+        // ----------------------------------- RAG -----------------------------
+
+        public String ragAnswer(MyChatDTO dto) {
+                List<Document> docs = vectorStore.similaritySearch(
+                                SearchRequest.builder().query(dto.getMyChatContents()).topK(5).build());
+
+                String context = docs.stream()
+                                .map(Document::getText)
+                                .collect(Collectors.joining("\n---\n"));
+
+                return chatClient.prompt()
+                                .system("당신은 JO-GPT 어시스턴트입니다. 다음 컨텍스트를 참고하여 질문에 답변하세요:\n" + context)
+                                .user(dto.getMyChatContents())
+                                .call()
+                                .content();
+        }
+
+        /* 문서 저장 (RAG용) */
         public void saveDocument(String context) {
                 vectorStore.add(List.of(new Document(context)));
         }
 
-        // -----임베딩 (*텍스트 -> 벡터)-----------
-        // 잊고 있었을 거지만 이 형태도 있었다 그리고 임베딩은 정밀도보다 속도 / 메모리가 중요
+        /* 임베딩 */
         public float[] getEmbedding(String text) {
-                return embeddingModel.embed(text); // 임베딩 변환 메서드
+                return embeddingModel.embed(text);
         }
 
-        // ------------------- 학술검색 + AI 답변-------------------------------
-        public String sendWithScholar(MyChatDTO dto, String model, String customPrompt) {
+        // ----------------------------- 학술검색 -----------------------------
+
+        public String sendWithScholar(MyChatDTO dto, String model, String authHeader) {
+                String customPrompt = getActivePromptContent(authHeader);
                 String scholarResults = scholarSearchService.search(dto.getMyChatContents());
 
                 String systemPrompt = """
@@ -274,14 +391,13 @@ public class ContentsService {
                                 검색 결과가 없으면 알고 있는 내용으로 답변하세요.
 
                                 [논문 검색 결과]
-                                %s        ← 첫 번째 자리
+                                %s
 
                                 [추가 지침]
-                                %s        ← 두 번째 자리
+                                %s
                                 """.formatted(
-                                scholarResults.isEmpty() ? "검색 결과 없음" : scholarResults, // 첫 번째 %s
-                                customPrompt != null ? customPrompt : "친절하고 학술적으로 답변하세요." // 두 번째 %s
-                );
+                                scholarResults.isEmpty() ? "검색 결과 없음" : scholarResults,
+                                customPrompt != null ? customPrompt : "친절하고 학술적으로 답변하세요.");
 
                 return chatClient.prompt()
                                 .system(systemPrompt)
@@ -297,38 +413,32 @@ public class ContentsService {
                                 .content();
         }
 
-        // 잠시 stream, map, collect, builder, prompt 설명
-        // 배열, 리스트를 스트림으로 변환 즉, 리스트를 하나씩 처리할수 있는 파이프라인으로 변환
-        //
+        public String sendWithRagAndScholar(MyChatDTO dto, String model, String authHeader) {
+                String customPrompt = getActivePromptContent(authHeader);
 
-        // ------------------- 학술검색 + RAG 답변-------------------------------
-        public String sendWithRagAndScholar(MyChatDTO dto, String model, String customPrompt) {
-
-                // 1. 벡터 DB 검색
                 List<Document> docs = vectorStore.similaritySearch(
                                 SearchRequest.builder()
                                                 .query(dto.getMyChatContents())
                                                 .topK(3)
                                                 .build());
-                // RAG 로 검색한 문서들을 하나로 합치는 과정
                 String ragContext = docs.stream()
                                 .map(Document::getText)
                                 .collect(Collectors.joining("\n---\n"));
 
-                // 2. 학술 검색
                 String scholarResults = scholarSearchService.search(dto.getMyChatContents());
 
                 String systemPrompt = """
-                                                                            아래 정보를 참고해서 답변하세요.
+                                아래 정보를 참고해서 답변하세요.
 
-                                                    [RAG 검색 결과]
-                                                                    %s
-
-                                                    [학술 검색 결과]
-                                                                    %s
-                                                                      [추가 지침]
+                                [RAG 검색 결과]
                                 %s
-                                                                    """.formatted(
+
+                                [학술 검색 결과]
+                                %s
+
+                                [추가 지침]
+                                %s
+                                """.formatted(
                                 ragContext.isEmpty() ? "검색 결과 없음" : ragContext,
                                 scholarResults.isEmpty() ? "검색 결과 없음" : scholarResults,
                                 customPrompt != null ? customPrompt : "친절하고 학술적으로 답변하세요.");
