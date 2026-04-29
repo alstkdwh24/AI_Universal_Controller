@@ -33,6 +33,22 @@ export default function ChattingList() {
         }
     };
 
+    const handleDelete = async (showChatKey) => {
+        const token = localStorage.getItem('ACCESS_TOKEN');
+        if (!token || !showChatKey) return;
+        try {
+            const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/${showChatKey}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                setChatList(prev => prev.filter(item => item.showChatKey !== showChatKey));
+            }
+        } catch (e) {
+            console.error('채팅 삭제 실패:', e);
+        }
+    };
+
     const formatTime = (dateStr) => {
         const d = new Date(dateStr);
         const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -47,6 +63,10 @@ export default function ChattingList() {
         e.target.style.height = 'auto';
         e.target.style.height = e.target.scrollHeight + 'px';
     };
+
+    const filtered = chatList.filter(item =>
+        !search.trim() || (item.showMyChatContents || '').includes(search.trim())
+    );
 
     return (
         <div className="chatting-container">
@@ -69,15 +89,19 @@ export default function ChattingList() {
                 </label>
             </div>
             <div id="chatting-list">
-                {chatList.map((item, i) => (
-                    <div className="chatting-list-container" key={i}>
-                        <img
-                            className="chatting-icon"
-                            src={item.mock ? '/image/Gemini_chat.png' : '/image/blueChatTing.png'}
-                            alt="채팅 아이콘"
-                        />
+                {filtered.map((item, i) => (
+                    <div className="chatting-list-container" key={item.showChatKey ?? i}>
+                        <div className="chatting-list-icon-wrap">
+                            <img
+                                className="chatting-icon"
+                                src={item.mock ? '/image/Gemini_chat.png' : '/image/blueChatTing.png'}
+                                alt="채팅 아이콘"
+                            />
+                        </div>
                         <div className="chatting-list-word">
-                            {item.showMyChatContents}
+                            <span className="chatting-list-title">
+                                {item.showMyChatContents || '(내용 없음)'}
+                            </span>
                             <div className="chatting-list-time">
                                 <i className="fa fa-clock-o chatting-list-time-icon"></i>
                                 <span className="chatting-list-time-text">
@@ -85,6 +109,15 @@ export default function ChattingList() {
                                 </span>
                             </div>
                         </div>
+                        {!item.mock && (
+                            <button
+                                className="chatting-delete-btn"
+                                onClick={() => handleDelete(item.showChatKey)}
+                                title="삭제"
+                            >
+                                <i className="fa fa-trash"></i>
+                            </button>
+                        )}
                     </div>
                 ))}
             </div>

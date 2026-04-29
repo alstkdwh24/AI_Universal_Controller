@@ -3,11 +3,17 @@ import { marked } from 'marked';
 import { useEffect, useRef, useState } from 'react';
 import CONFIG from '../config/config';
 
+const MODEL_OPTIONS = [
+    { label: 'Gemini 3 Flash Image', value: 'gemini-3.1-flash-image-preview' },
+    { label: 'GPT-4.5',              value: 'gpt-4.5' },
+];
+
 export default function ChatHome({ user, isActive }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [showChat, setShowChat] = useState(localStorage.getItem('showChat'));
+    const [selectedModel, setSelectedModel] = useState(MODEL_OPTIONS[0].value);
     const textareaRef = useRef(null);
     const chatContainerRef = useRef(null);
 
@@ -79,7 +85,7 @@ export default function ChatHome({ user, isActive }) {
         const key = await res.text();
         localStorage.setItem('showChat', key);
         setShowChat(key);
-        await fetchGptResponse(token, myContent);
+        await fetchGptResponse(token, myContent, selectedModel);
     };
 
     const continueSend = async (token, myContent, chatKey) => {
@@ -88,21 +94,34 @@ export default function ChatHome({ user, isActive }) {
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ myChatContents: myContent, showChatKey: chatKey })
         });
-        await fetchGptResponse(token, myContent);
+        await fetchGptResponse(token, myContent, selectedModel);
     };
 
-    const fetchGptResponse = async (token, myContent) => {
-        const customPrompt = localStorage.getItem('CUSTOM_PROMPT')?.trim();
-
-
+    const fetchGptResponse = async (token, myContent, model) => {
         const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/gptContents`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', ...(customPrompt && { 'X-Custom-Prompt': customPrompt }) },
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'X-Model': model,
+            },
             body: JSON.stringify({ myChatContents: myContent })
         });
-        const gptText = await res.text();  // 텍스트로 직접 받기
+        const gptText = await res.text();
         if (gptText) {
-            setMessages(prev => [...prev, { role: 'ai', content: gptText }]);
+            /* 이미지 포함 JSON 응답 파싱 시도 */
+            let content = gptText;
+            let images = [];
+            try {
+                const parsed = JSON.parse(gptText);
+                if (parsed.text !== undefined && parsed.images !== undefined) {
+                    content = parsed.text;
+                    images = parsed.images;
+                }
+            } catch (_) {
+                /* JSON이 아니면 텍스트 그대로 사용 */
+            }
+            setMessages(prev => [...prev, { role: 'ai', content, images }]);
             await fetch(`${CONFIG.API_CONTENTS_URL}/contents/notifications`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -124,10 +143,24 @@ export default function ChatHome({ user, isActive }) {
                     ) : (
                         <div key={i} className="gptContents">
                             <div id="geminiContent-geminiContent">
-                                <div
-                                    id="realGeminiContent"
-                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(msg.content)) }}
-                                />
+                                {msg.content && (
+                                    <div
+                                        id="realGeminiContent"
+                                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(msg.content)) }}
+                                    />
+                                )}
+                                {msg.images && msg.images.length > 0 && (
+                                    <div className="gpt-image-wrap">
+                                        {msg.images.map((img, idx) => (
+                                            <img
+                                                key={idx}
+                                                src={`data:${img.mimeType};base64,${img.data}`}
+                                                alt="AI 생성 이미지"
+                                                className="gpt-generated-image"
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )
@@ -169,13 +202,18 @@ export default function ChatHome({ user, isActive }) {
                         <div className="middle-tools"></div>
                         <div className="search-result">
                             <div className="select-model-wrapper">
-                                <select className="select-model">
-                                    <option>Gemini 3 Flash</option>
-                                    <option>GPT-4.5</option>
+                                <select
+                                    className="select-model"
+                                    value={selectedModel}
+                                    onChange={e => setSelectedModel(e.target.value)}
+                                >
+                                    {MODEL_OPTIONS.map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
                                 </select>
                             </div>
                             <button
-                                className={`search-btn ${messages.length > 0 ? 'search-real-hide' : 'search-real'}`}
+                                className={messages.length > 0 ? 'search-real-hide' : 'search-btn search-real'}
                                 onClick={handleSend}
                             >
                                 <i className="fa fa-arrow-up"></i>
