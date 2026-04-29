@@ -1,8 +1,8 @@
 package com.example.jo_gpt_program;
 
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -25,7 +25,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 public class JoGptProgramApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(JoGptProgramApplication.class, args);
+        new SpringApplicationBuilder(JoGptProgramApplication.class)
+                .properties("spring.config.location=file:C:/courage3/JavaRealProject/potfolio_project/AI_Universal_Controller/backend/JO_GPT_PROGRAM/src/main/resources/application.yml")
+                .run(args);
     }
 
 }
