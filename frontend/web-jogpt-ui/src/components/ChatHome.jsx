@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react';
-import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import { marked } from 'marked';
+import { useEffect, useRef, useState } from 'react';
 import CONFIG from '../config/config';
 
 export default function ChatHome({ user, isActive }) {
@@ -9,6 +9,13 @@ export default function ChatHome({ user, isActive }) {
     const [loading, setLoading] = useState(false);
     const [showChat, setShowChat] = useState(localStorage.getItem('showChat'));
     const textareaRef = useRef(null);
+    const chatContainerRef = useRef(null);
+
+    useEffect(() => {
+        const el = chatContainerRef.current;
+        if (!el) return;
+        el.scrollTop = el.scrollHeight;
+    }, [messages, loading]);
 
     const getValidToken = () => {
         const raw = localStorage.getItem('ACCESS_TOKEN');
@@ -85,13 +92,15 @@ export default function ChatHome({ user, isActive }) {
     };
 
     const fetchGptResponse = async (token, myContent) => {
+        const customPrompt = localStorage.getItem('CUSTOM_PROMPT')?.trim();
+
+
         const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/gptContents`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', ...(customPrompt && { 'X-Custom-Prompt': customPrompt }) },
             body: JSON.stringify({ myChatContents: myContent })
         });
-        const data = await res.json();
-        const gptText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const gptText = await res.text();  // 텍스트로 직접 받기
         if (gptText) {
             setMessages(prev => [...prev, { role: 'ai', content: gptText }]);
             await fetch(`${CONFIG.API_CONTENTS_URL}/contents/notifications`, {
@@ -103,8 +112,8 @@ export default function ChatHome({ user, isActive }) {
     };
 
     return (
-        <div className={isActive ? 'realContentActive' : 'realContent'}>
-            <div className="my-gemini-talk">
+        <div className={`${isActive ? 'realContentActive' : 'realContent'}${messages.length > 0 ? ' chat-active' : ''}`}>
+            <div ref={chatContainerRef} className={`my-gemini-talk${messages.length > 0 ? ' my-gemini-talk-active' : ''}`}>
                 {messages.map((msg, i) => (
                     msg.role === 'user' ? (
                         <div key={i} className="myContents">
@@ -157,11 +166,14 @@ export default function ChatHome({ user, isActive }) {
                                 <i className="fa fa-paperclip"></i>
                             </button>
                         </div>
+                        <div className="middle-tools"></div>
                         <div className="search-result">
-                            <select className="select-model">
-                                <option>Gemini 3 Flash</option>
-                                <option>GPT-4.5</option>
-                            </select>
+                            <div className="select-model-wrapper">
+                                <select className="select-model">
+                                    <option>Gemini 3 Flash</option>
+                                    <option>GPT-4.5</option>
+                                </select>
+                            </div>
                             <button
                                 className={`search-btn ${messages.length > 0 ? 'search-real-hide' : 'search-real'}`}
                                 onClick={handleSend}

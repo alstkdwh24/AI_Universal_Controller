@@ -99,3 +99,44 @@
     border: none;
 }
 
+/* ===== 모바일: 바텀 시트 슬라이드 업 ===== */
+@media (max-width: 768px) {
+
+    /* 오버레이를 하단 정렬로 변경 */
+    .modelLogin {
+        align-items: flex-end;
+    }
+
+    /* 모달을 전체 너비 바텀 시트로 변경 */
+    .modelJoin {
+        width: 100%;
+        min-width: unset;
+        height: 92%;
+        border-radius: 20px 20px 0 0;
+        padding-bottom: env(safe-area-inset-bottom);
+        animation: loginSlideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    .modelJoinTitleH2 {
+        font-size: 1.6rem;
+    }
+
+    .modelJoinTitleP {
+        font-size: 1rem;
+    }
+
+    /* 소셜 로그인 버튼 터치 영역 확보 */
+    [class^="socialJoin-"] {
+        min-height: 52px;
+    }
+
+    .socialJoins-name {
+        font-size: 1rem;
+    }
+}
+
+@keyframes loginSlideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+}
+

@@ -3,7 +3,9 @@ import SideBar from './components/SideBar';
 import TopBar from './components/TopBar';
 import ChatHome from './components/ChatHome';
 import ChattingList from './components/ChattingList';
+import SettingsView from './components/SettingsView';
 import LoginModal from './components/LoginModal';
+import LoginView from './components/LoginView';
 import AlertModal from './components/AlertModal';
 import CONFIG from './config/config';
 
@@ -14,6 +16,8 @@ import './styles/chatTing.css';
 import './styles/chattingHome.css';
 import './styles/alertModal.css';
 import './styles/menuBar.css';
+import './styles/settingsView.css';
+import './styles/loginView.css';
 
 export default function App() {
     const [user, setUser] = useState(null);
@@ -22,6 +26,16 @@ export default function App() {
     const [sidebarActive, setSidebarActive] = useState(false);
     const [currentView, setCurrentView] = useState('home');
     const [showAlert, setShowAlert] = useState(false);
+    const [showLoginView, setShowLoginView] = useState(false);
+
+    /* 모바일 → 화면 전환 / PC → 기존 모달 */
+    const handleLoginClick = () => {
+        if (window.innerWidth <= 768) {
+            setShowLoginView(true);
+        } else {
+            setShowLogin(true);
+        }
+    };
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -76,6 +90,26 @@ export default function App() {
         setTimeout(() => setToast(''), 2500);
     };
 
+    const renderContent = () => {
+        switch (currentView) {
+            case 'chat':
+                return (
+                    <div style={{ display: 'flex', flex: 1, justifyContent: 'center', overflow: 'auto' }}>
+                        <ChattingList />
+                    </div>
+                );
+            case 'settings':
+                return (
+                    <SettingsView
+                        user={user}
+                        onBack={() => setCurrentView('home')}
+                    />
+                );
+            default:
+                return <ChatHome user={user} isActive={sidebarActive} />;
+        }
+    };
+
     return (
         <>
             <SideBar
@@ -84,23 +118,20 @@ export default function App() {
                 onHomeClick={() => setCurrentView('home')}
                 onChatClick={() => setCurrentView('chat')}
                 onBellClick={() => setShowAlert(true)}
+                onSettingsClick={() => setCurrentView('settings')}
             />
             <div className={sidebarActive ? 'contentActive' : 'content'}>
                 <TopBar
                     user={user}
                     isActive={sidebarActive}
-                    onLoginClick={() => setShowLogin(true)}
+                    onLoginClick={handleLoginClick}
                     onLogout={handleLogout}
                 />
-                {currentView === 'home'
-                    ? <ChatHome user={user} isActive={sidebarActive} />
-                    : <div style={{ display: 'flex', flex: 1, justifyContent: 'center', overflow: 'auto' }}>
-                        <ChattingList />
-                      </div>
-                }
+                {renderContent()}
             </div>
 
             {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+            {showLoginView && <LoginView onClose={() => setShowLoginView(false)} />}
             {showAlert && <AlertModal onClose={() => setShowAlert(false)} />}
             {toast && <div id="toast" className="show">{toast}</div>}
         </>

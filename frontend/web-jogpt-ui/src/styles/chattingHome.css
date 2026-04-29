@@ -179,3 +179,56 @@
     /* 2. IE 및 구형 Edge: 특수 속성 */
     -ms-overflow-style: none;
 }
+
+/* 메시지 전송 후 채팅 영역 전환 */
+.my-gemini-talk-active {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    height: 80%;
+    width: 44rem;
+    gap: 1rem;
+    overflow-y: auto;
+}
+
+/* ===== 스마트폰 반응형 (768px 이하) ===== */
+@media (max-width: 768px) {
+
+    /* 채팅 메시지 영역 */
+    .my-gemini-talk-active {
+        width: 100%;
+        height: auto;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch; /* iOS 모멘텀 스크롤 */
+        padding: 0 1rem;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    /* 내 질문 말풍선 */
+    #realMyContent {
+        max-width: 75vw;
+        word-break: break-word;
+    }
+
+    /* AI 답변 말풍선 */
+    #realGeminiContent {
+        max-width: 85vw;
+        word-break: break-word;
+        font-size: 0.95rem;
+    }
+
+    /* 코드 블록 */
+    #realGeminiContent pre {
+        max-width: calc(85vw - 2rem);
+        overflow-x: auto;
+        font-size: 0.8rem;
+    }
+
+    /* 테이블 */
+    #realGeminiContent table {
+        font-size: 0.85rem;
+    }
+}

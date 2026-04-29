@@ -1,8 +1,18 @@
-export default function SideBar({ isActive, onMenuClick, onHomeClick, onChatClick, onBellClick }) {
+export default function SideBar({ isActive, onMenuClick, onHomeClick, onChatClick, onBellClick, onSettingsClick }) {
+
+    /* 모바일에서는 첫 번째 버튼이 설정, 데스크탑에서는 메뉴 토글 */
+    const handleFirstButton = () => {
+        if (window.innerWidth <= 768) {
+            onSettingsClick?.();
+        } else {
+            onMenuClick();
+        }
+    };
+
     return (
         <div className={isActive ? 'active' : 'sideBar'}>
             <div className={isActive ? 'sideBarTopActive' : 'sideBar-top'}>
-                <button className={isActive ? 'sideBarImgActive' : 'sideBarImg'} onClick={onMenuClick}>
+                <button className={isActive ? 'sideBarImgActive' : 'sideBarImg'} onClick={handleFirstButton}>
                     <div className="sideButton">
                         <i className="fa fa-bars same-font icon-controller"></i>
                         <div className="sideBarText">메뉴</div>
@@ -40,7 +50,7 @@ export default function SideBar({ isActive, onMenuClick, onHomeClick, onChatClic
                     </div>
                     <div className="sideBarText">알림</div>
                 </button>
-                <button className={isActive ? 'sideBarImgActive' : 'sideBarImg'}>
+                <button className={isActive ? 'sideBarImgActive' : 'sideBarImg'} onClick={onSettingsClick}>
                     <div className="icon-controller">
                         <i className="fa fa-cog" style={{ fontSize: '24px', color: '#555' }}></i>
                     </div>
