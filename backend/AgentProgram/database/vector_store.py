@@ -34,22 +34,17 @@ vector_store = Chroma(
     persist_directory="./chroma_db"
 )
 
+# Google 검색을 수행하는 함수
 def google_search(query: str):
     search_url = perform_google_web_search(query)
     logger.info(f"Google 검색 결과: {search_url}")
     return search_url
 
-def fetch_text_from_url(url):
-    try:
-        res = requests.get(url, timeout=5)
-        soup = BeautifulSoup(res.text, "html.parser")
-        paragraphs = [p.get_text() for p in soup.find_all("p")]
-        return "\n".join(paragraphs)
-    except Exception as e:
-        logger.error(f"URL에서 텍스트를 가져오는 중 오류 발생: {e}")
-        return ""
 
+
+# 벡터스토어에서 유사한 문서를 검색하는 함수
 def similarity_search(query: str, k: int = 5):
+    # 검색 쿼리를 임베딩하여 벡터스토어에서 유사한 문서를 검색합니다.
     query_vector_store = Chroma(
         embedding_function=query_embeddings,
         collection_name="agent_documents",
@@ -62,7 +57,7 @@ all_docs_count = vector_store._collection.count()
 
 if all_docs_count == 0:
     DOC_PATH = "AI_유니버설_컨트롤러_명세서.txt"
-
+    # 문서 파일이 존재하지 않으면 경고 로그를 출력하고 빈 벡터 DB로 시작합니다.
     if not os.path.exists(DOC_PATH):
         logger.warning(f"문서 파일을 찾을 수 없습니다: {DOC_PATH}")
         logger.warning("벡터 DB가 비어 있는 상태로 시작합니다.")
@@ -81,3 +76,19 @@ if all_docs_count == 0:
         except Exception as e:
             logger.error(f"문서 임베딩 실패 (GOOGLE_API_KEY 확인 필요): {e}")
             logger.warning("벡터 DB가 비어 있는 상태로 시작합니다.")
+
+# 문서 추가 함수
+def add_document(text: str):
+    # 긴 텍스트를 일정크기로 잘라 준다.
+    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    # 잘라진 텍스트를 문서 객체로 만들어 벡터스토어에 저장한다.
+    docs = splitter.create_documents([text])
+    vector_store.add_documents(docs)
+
+# 문서 갯수 조회
+def get_document_count():
+    return vector_store._collection.count()
+
+# 모든 문서 삭제
+def delete_all_documents():
+    vector_store._collection.delete(where={"source":{"$ne": ""}})
