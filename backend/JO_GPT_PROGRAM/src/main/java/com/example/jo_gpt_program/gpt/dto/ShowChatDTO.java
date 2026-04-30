@@ -13,13 +13,10 @@ import java.time.LocalDateTime;
 @Builder
 public class ShowChatDTO {
 
+    private Long showChatKey;
+
     private String showMyChatContents;
 
-
     private LocalDateTime showChatRegistration;
-
-
-
-
 
 }

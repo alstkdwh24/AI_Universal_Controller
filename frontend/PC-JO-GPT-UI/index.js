@@ -1,6 +1,6 @@
-const {app, BrowserWindow, Menu, globalShortcut, ipcMain, session, safeStorage} = require('electron');
+const { app, BrowserWindow, Menu, globalShortcut, ipcMain, session, safeStorage } = require('electron');
 const path = require('path');
-const {jwtDecode} = require('jwt-decode');
+const { jwtDecode } = require('jwt-decode');
 const electronReload = require("electron-reload");
 const fs = require('fs');
 const TOKEN_FILE_PATH = path.join(app.getPath('userData'), 'auth-token.dat');
@@ -49,10 +49,10 @@ if (!app.requestSingleInstanceLock()) {//Electron앱이 중복실행 되는 것�
         if (process.defaultApp) {
             if (process.argv.length >= 2) {
                 const appPath = path.resolve('.');
-                app.setAsDefaultProtocolClient(CUSTOM_SCHEME, process.execPath, [appPath]);
+                // app.setAsDefaultProtocolClient(CUSTOM_SCHEME, process.execPath, [appPath]);
             }
         } else {
-            app.setAsDefaultProtocolClient(CUSTOM_SCHEME);
+            // app.setAsDefaultProtocolClient(CUSTOM_SCHEME);
         }
 
         // 3. 앱이 꺼져 있을 때 링크로 실행되었다면(Cold Start), 그 정보를 처리한다. 앱을 강제로 깨워서 실행시킨다.
@@ -135,19 +135,19 @@ function createWindow() {
         }
     });
 
-    mainWindow.webContents.setWindowOpenHandler(({url}) => {
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
         if (url.startsWith('jo-gpt://')) {
             handleCustomProtocol(url);
-            return {action: 'deny'};
+            return { action: 'deny' };
         }// 2. http나 https로 시작하는 모든 외부 요청은 무조건 시스템 브라우저로 엽니다.
         // 이렇게 하면 앱 내부에 "Login with OAuth 2.0" 같은 창이 뜨는 것을 방지할 수 있습니다.
         if (url.startsWith('http:') || url.startsWith('https:')) {
-            const {shell} = require('electron');
+            const { shell } = require('electron');
             shell.openExternal(url).then(r => console.log("External URL opened:", url)).catch(e => console.error("Failed to open external URL:", e));
-            return {action: 'deny'}; // 앱 내에서 새 창이 열리는 것을 차단
+            return { action: 'deny' }; // 앱 내에서 새 창이 열리는 것을 차단
         }
 
-        return {action: 'deny'}; // 그 외의 모든 새 창 요청 차단
+        return { action: 'deny' }; // 그 외의 모든 새 창 요청 차단
 
     });
 
@@ -161,7 +161,7 @@ function createWindow() {
             pendingToken = null;
         }
     })
-// 수정안
+    // 수정안
     if (!app.isPackaged) {
         mainWindow.webContents.openDevTools();
     }
