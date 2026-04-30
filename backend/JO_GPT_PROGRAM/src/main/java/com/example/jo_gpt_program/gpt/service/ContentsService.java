@@ -1,14 +1,41 @@
 package com.example.jo_gpt_program.gpt.service;
 
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
 import com.example.entitycom.entity.chat.ShowChat;
+import com.example.entitycom.entity.gpt.GptChat;
 import com.example.entitycom.entity.log.CreateTimeLogs;
 import com.example.entitycom.entity.member.MemberPrompt;
 import com.example.entitycom.entity.member.Members;
 import com.example.entitycom.entity.member.MyChat;
+import com.example.jo_gpt_program.gpt.dto.ChatMessageDTO;
 import com.example.jo_gpt_program.gpt.dto.MemberPromptDTO;
 import com.example.jo_gpt_program.gpt.dto.MyChatDTO;
 import com.example.jo_gpt_program.gpt.dto.ShowChatDTO;
 import com.example.jo_gpt_program.gpt.repository.jpa.CreateTimeRepository;
+import com.example.jo_gpt_program.gpt.repository.jpa.GptChatRepository;
 import com.example.jo_gpt_program.gpt.repository.jpa.MemberPromptRepository;
 import com.example.jo_gpt_program.gpt.repository.jpa.MyChatRepository;
 import com.example.jo_gpt_program.gpt.repository.jpa.ShowChatRepository;
@@ -20,21 +47,9 @@ import com.google.genai.types.Content;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.Part;
+
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.document.Document;
-import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
-import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 @SuppressWarnings("ALL")
 @Service("contentsService")
@@ -45,6 +60,7 @@ public class ContentsService {
         private String geminiApiKey;
 
         private final MyChatRepository myChatRepository;
+        private final GptChatRepository gptChatRepository;
         private final RestTemplate restTemplate;
         private final MemberRepository memberRepository;
         private final ShowChatRepository showChatRepository;
@@ -57,6 +73,7 @@ public class ContentsService {
         private final MemberPromptRepository memberPromptRepository;
 
         public ContentsService(@Qualifier("myChatRepository") MyChatRepository myChatRepository,
+                        GptChatRepository gptChatRepository,
                         RestTemplate restTemplate, MemberRepository memberRepository,
                         ShowChatRepository showChatRepository,
                         CreateTimeRepository createTimeRepository, JWTUtils jwtUtils, ChatClient chatClient,
@@ -65,6 +82,7 @@ public class ContentsService {
                         MemberPromptRepository memberPromptRepository) {
                 this.restTemplate = restTemplate;
                 this.myChatRepository = myChatRepository;
+                this.gptChatRepository = gptChatRepository;
                 this.memberRepository = memberRepository;
                 this.showChatRepository = showChatRepository;
                 this.createTimeRepository = createTimeRepository;
@@ -267,29 +285,80 @@ public class ContentsService {
         // ----------------------------- AI 관련 -----------------------------
 
         /* Gemini 호출 — 이미지 모델은 SDK 직접 호출, 그 외는 Spring AI ChatClient 사용 */
+        @Transactional
         public String sendGeminiAI(MyChatDTO dto, String model, String authHeader) {
                 String customPrompt = getActivePromptContent(authHeader);
-                String systemText = customPrompt != null && !customPrompt.isBlank() ? customPrompt
+                String systemPrompt = customPrompt != null && !customPrompt.isBlank() ? customPrompt
                                 : "당신은 JO-GPT 어시스턴트입니다. 항상 한국어로 친절하게 답변하세요.";
 
-                /* 이미지 생성 모델: Google GenAI SDK로 직접 호출해야 responseModalities 지정 가능 */
+                String responseText;
+
                 if (model.contains("image")) {
-                        return sendGeminiImageDirect(dto.getMyChatContents(), model, systemText);
+                        /* 이미지 생성 모델: Google GenAI SDK로 직접 호출 */
+                        responseText = sendGeminiImageDirect(dto.getMyChatContents(), model, systemPrompt);
+                } else {
+                        /* 일반 텍스트 모델: 이전 대화 맥락 로드 후 Spring AI ChatClient 호출 */
+                        List<Message> history = dto.getShowChatKey() != null
+                                        ? loadChatHistory(dto.getShowChatKey())
+                                        : List.of();
+
+                        responseText = chatClient.prompt()
+                                        .system(systemPrompt)
+                                        .messages(history)
+                                        .user(dto.getMyChatContents())
+                                        .options(GoogleGenAiChatOptions.builder()
+                                                        .model(model)
+                                                        .temperature(0.7)
+                                                        .maxOutputTokens(1024)
+                                                        .topP(0.9)
+                                                        .topK(100)
+                                                        .build())
+                                        .call()
+                                        .content();
                 }
 
-                /* 일반 텍스트 모델: Spring AI ChatClient */
-                return chatClient.prompt()
-                                .system(systemText)
-                                .user(dto.getMyChatContents())
-                                .options(GoogleGenAiChatOptions.builder()
-                                                .model(model)
-                                                .temperature(0.7)
-                                                .maxOutputTokens(1024)
-                                                .topP(0.9)
-                                                .topK(100)
-                                                .build())
-                                .call()
-                                .content();
+                /* AI 답변을 gpt_chat 테이블에 저장 */
+                if (responseText != null && dto.getShowChatKey() != null) {
+                        saveGptResponse(dto.getShowChatKey(), responseText);
+                }
+
+                return responseText;
+        }
+
+        /* DB의 이전 대화를 Spring AI Message 목록으로 변환 (텍스트 모델 맥락용) */
+        private List<Message> loadChatHistory(Long showChatKey) {
+                Optional<ShowChat> optionalShowChat = showChatRepository.findShowChatByShowChatKey(showChatKey);
+                if (optionalShowChat.isEmpty())
+                        return List.of();
+
+                ShowChat showChat = optionalShowChat.get();
+                List<ChatMessageDTO> msgs = new ArrayList<>();
+
+                myChatRepository.findByShowChat(showChat)
+                                .forEach(mc -> msgs.add(
+                                                new ChatMessageDTO("user", mc.getMyChatContents(), mc.getMyChatKey())));
+                gptChatRepository.findByShowChat(showChat)
+                                .forEach(gc -> msgs.add(
+                                                new ChatMessageDTO("ai", gc.getGptChatContents(), gc.getGptChatKey())));
+
+                msgs.sort(Comparator.comparingLong(ChatMessageDTO::getKey));
+
+                return msgs.stream()
+                                .map(m -> "user".equals(m.getRole())
+                                                ? (Message) new UserMessage(m.getContent())
+                                                : new AssistantMessage(m.getContent()))
+                                .collect(Collectors.toList());
+        }
+
+        /* AI 답변을 gpt_chat 테이블에 저장 */
+        private void saveGptResponse(Long showChatKey, String response) {
+                showChatRepository.findShowChatByShowChatKey(showChatKey).ifPresent(showChat -> {
+                        GptChat gptChat = GptChat.builder()
+                                        .GptChatContents(response)
+                                        .showChat(showChat)
+                                        .build();
+                        gptChatRepository.save(gptChat);
+                });
         }
 
         /* Google GenAI SDK 직접 호출 — TEXT + IMAGE 모달리티 설정 후 인라인 이미지 추출 */
@@ -301,13 +370,13 @@ public class ContentsService {
                                 .role("system")
                                 .parts(Part.fromText(systemText))
                                 .build();
-
+                // 사용자 메시지는 일반 프롬프트로 전달
                 List<Content> contents = List.of(
                                 Content.builder()
                                                 .role("user")
                                                 .parts(Part.fromText(userMessage))
                                                 .build());
-
+                // TXT + IMAGE 모달러티 생성, 최대 토큰 수는 2048로 설정
                 GenerateContentConfig config = GenerateContentConfig.builder()
                                 .systemInstruction(systemInstruction)
                                 .responseModalities("TEXT", "IMAGE")
@@ -315,11 +384,24 @@ public class ContentsService {
                                 .build();
 
                 log.info("[ImageGen] 요청 모델={}, 프롬프트={}", model, userMessage);
+                // Google GenAI SDK로 Gemini 모델 직접 호출 그리고 response에 응답을 받음
                 GenerateContentResponse response = client.models.generateContent(model, contents, config);
 
-                StringBuilder textBuilder = new StringBuilder();
-                List<Map<String, String>> images = new ArrayList<>();
+                // 텍스트를 조각조각 이어 붙이기 위한 JAVA 기본 클래스 Gemini의 응답이 텍스트가 여러 part로 나누어 올 수 있기 때문에
+                // StringBuilder로 이어 붙임 그리고 마지막 한 번만 변환해서 성능상 더 좋음
 
+                StringBuilder textBuilder = new StringBuilder();
+
+                // AI 응답에서 이미지가 여러 장 나올 수 있기 대문입니다. 각 이미지는 두 가지 정보가 필요합니다. 이미지 현식과 실제 이미지 데이터
+                // 입니다.
+                List<Map<String, String>> images = new ArrayList<>();
+                // response
+                // ㄴ candidate
+                // ㄴ content
+                // ㄴ part
+                // part -> text 면 -> textBuilder에 이어 붙이기
+                // part -> inlineData 있으면 -> 이미지 추출
+                // ifPresent 값이 있으면 이걸 해라, 없으면 넘어가라는 의미입니다.
                 response.candidates().orElse(List.of()).forEach(candidate -> candidate.content()
                                 .ifPresent(content -> content.parts().orElse(List.of()).forEach(part -> {
                                         log.info("[ImageGen] part - text={}, inlineData={}",
@@ -337,6 +419,7 @@ public class ContentsService {
                                 })));
 
                 log.info("[ImageGen] 결과 - text길이={}, 이미지수={}", textBuilder.length(), images.size());
+                // 모아놓은 StringBuilder의 텍스트들을 String으로 변환
                 String textContent = textBuilder.toString();
 
                 if (!images.isEmpty()) {
@@ -411,6 +494,25 @@ public class ContentsService {
                                                 .build())
                                 .call()
                                 .content();
+        }
+
+        /* 특정 채팅방의 대화 내역 조회 (유저 메시지 + AI 답변을 시간순으로 정렬) */
+        @Transactional
+        public List<ChatMessageDTO> getChatHistory(Long showChatKey, String authHeader) {
+                authHeader(authHeader); // 인증 검증
+                ShowChat showChat = showChatRepository.findShowChatByShowChatKey(showChatKey)
+                                .orElseThrow(() -> new RuntimeException("채팅방을 찾을 수 없습니다: " + showChatKey));
+
+                List<ChatMessageDTO> messages = new ArrayList<>();
+
+                myChatRepository.findByShowChat(showChat).forEach(mc -> messages
+                                .add(new ChatMessageDTO("user", mc.getMyChatContents(), mc.getMyChatKey())));
+
+                gptChatRepository.findByShowChat(showChat).forEach(gc -> messages
+                                .add(new ChatMessageDTO("ai", gc.getGptChatContents(), gc.getGptChatKey())));
+
+                messages.sort(Comparator.comparingLong(ChatMessageDTO::getKey));
+                return messages;
         }
 
         public String sendWithRagAndScholar(MyChatDTO dto, String model, String authHeader) {
