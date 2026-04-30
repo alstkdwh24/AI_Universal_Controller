@@ -97,7 +97,7 @@ export default function ChatHome({ user, isActive }) {
 
         const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/gptContents`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', ...(customPrompt && { 'X-Custom-Prompt': customPrompt }) },
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', ...(customPrompt && { 'X-Custom-Prompt': encodeURIComponent(customPrompt) }) },
             body: JSON.stringify({ myChatContents: myContent })
         });
         const gptText = await res.text();  // 텍스트로 직접 받기
