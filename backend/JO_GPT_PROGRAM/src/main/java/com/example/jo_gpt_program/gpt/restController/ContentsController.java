@@ -1,5 +1,7 @@
 package com.example.jo_gpt_program.gpt.restController;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -68,7 +70,8 @@ public class ContentsController {
     public ResponseEntity<String> getGptContents(@RequestBody MyChatDTO dto,
             @RequestHeader(value = "X-Model", defaultValue = "gemini-3-flash-preview") String model,
             @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {// 프론트에서 보내는 프롬프트
-        String response = contentsService.sendGeminiAI(dto, model, customPrompt);
+        String decoded = customPrompt != null ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8) : null;
+        String response = contentsService.sendGeminiAI(dto, model, decoded);
         return ResponseEntity.ok(response);
     }
 
@@ -119,7 +122,8 @@ public class ContentsController {
             @RequestHeader(value = "X-Model", defaultValue = "gemini-3.0-flash") String model,
             @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {
 
-        String response = contentsService.sendWithScholar(dto, model, customPrompt);
+        String decoded = customPrompt != null ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8) : null;
+        String response = contentsService.sendWithScholar(dto, model, decoded);
         // TODO: process POST request
 
         return ResponseEntity.ok(response);
@@ -131,7 +135,8 @@ public class ContentsController {
             @RequestBody MyChatDTO dto,
             @RequestHeader(value = "X-Model", defaultValue = "gemini-3.0-flash") String model,
             @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {
-        String response = contentsService.sendWithRagAndScholar(dto, model, customPrompt);
+        String decoded = customPrompt != null ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8) : null;
+        String response = contentsService.sendWithRagAndScholar(dto, model, decoded);
         return ResponseEntity.ok(response);
 
     }
