@@ -27,6 +27,7 @@ export default function App() {
     const [currentView, setCurrentView] = useState('home');
     const [showAlert, setShowAlert] = useState(false);
     const [showLoginView, setShowLoginView] = useState(false);
+    const [selectedChatKey, setSelectedChatKey] = useState(null);
 
     /* 모바일 → 화면 전환 / PC → 기존 모달 */
     const handleLoginClick = () => {
@@ -95,7 +96,7 @@ export default function App() {
             case 'chat':
                 return (
                     <div style={{ display: 'flex', flex: 1, justifyContent: 'center', overflow: 'auto' }}>
-                        <ChattingList />
+                        <ChattingList onChatSelect={(key) => { setSelectedChatKey(key); setCurrentView('home'); }} />
                     </div>
                 );
             case 'settings':
@@ -106,7 +107,7 @@ export default function App() {
                     />
                 );
             default:
-                return <ChatHome user={user} isActive={sidebarActive} />;
+                return <ChatHome user={user} isActive={sidebarActive} selectedChatKey={selectedChatKey} onChatLoaded={() => setSelectedChatKey(null)} />;
         }
     };
 
