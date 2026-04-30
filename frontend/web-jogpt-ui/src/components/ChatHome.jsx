@@ -15,7 +15,14 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
-    const [showChat, setShowChat] = useState(localStorage.getItem('showChat'));
+    const [showChat, setShowChat] = useState(() => {
+        const stored = localStorage.getItem('showChat');
+        if (stored && !/^\d+$/.test(stored.trim())) {
+            localStorage.removeItem('showChat');
+            return null;
+        }
+        return stored;
+    });
     const [selectedModel, setSelectedModel] = useState(MODEL_OPTIONS[0].value);
     const textareaRef = useRef(null);
     const chatContainerRef = useRef(null);
@@ -109,6 +116,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ myChatContents: myContent })
         });
+        if (!res.ok) throw new Error(`채팅방 생성 실패: ${res.status}`);
         const key = await res.text();
         localStorage.setItem('showChat', key);
         setShowChat(key);
@@ -136,6 +144,10 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
             },
             body: JSON.stringify({ myChatContents: myContent, showChatKey: chatKey })
         });
+        if (!res.ok) {
+            setMessages(prev => [...prev, { role: 'ai', content: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' }]);
+            return;
+        }
         const gptText = await res.text();
         if (gptText) {
             let fullContent = gptText;

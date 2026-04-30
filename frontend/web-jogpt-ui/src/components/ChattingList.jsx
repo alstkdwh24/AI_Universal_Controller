@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import CONFIG from '../config/config';
 
-export default function ChattingList() {
+export default function ChattingList({ onChatSelect }) {
     const [chatList, setChatList] = useState([]);
     const [search, setSearch] = useState('');
 
@@ -42,6 +42,21 @@ export default function ChattingList() {
         return `${month}/${day} ${hours}:${minutes}`;
     };
 
+    const handleDelete = async (e, key) => {
+        e.stopPropagation();
+        const token = localStorage.getItem('ACCESS_TOKEN');
+        if (!token) return;
+        try {
+            await fetch(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/${key}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            setChatList(prev => prev.filter(item => String(item.showChatKey) !== String(key)));
+        } catch (e) {
+            console.error('채팅 삭제 실패:', e);
+        }
+    };
+
     const handleSearchInput = (e) => {
         setSearch(e.target.value);
         e.target.style.height = 'auto';
@@ -70,7 +85,12 @@ export default function ChattingList() {
             </div>
             <div id="chatting-list">
                 {chatList.map((item, i) => (
-                    <div className="chatting-list-container" key={i}>
+                    <div
+                        className="chatting-list-container"
+                        key={i}
+                        onClick={() => !item.mock && onChatSelect?.(item.showChatKey)}
+                        style={{ cursor: item.mock ? 'default' : 'pointer' }}
+                    >
                         <img
                             className="chatting-icon"
                             src={item.mock ? '/image/Gemini_chat.png' : '/image/blueChatTing.png'}
@@ -85,6 +105,14 @@ export default function ChattingList() {
                                 </span>
                             </div>
                         </div>
+                        {!item.mock && (
+                            <button
+                                className="chatting-delete-btn"
+                                onClick={(e) => handleDelete(e, item.showChatKey)}
+                            >
+                                <i className="fa fa-trash"></i>
+                            </button>
+                        )}
                     </div>
                 ))}
             </div>
