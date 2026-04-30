@@ -1,6 +1,7 @@
 package com.example.jo_gpt_program.gpt.restController;
 
 import com.example.entitycom.dto.MessageDTO;
+import com.example.jo_gpt_program.gpt.dto.ChatMessageDTO;
 import com.example.jo_gpt_program.gpt.dto.MemberPromptDTO;
 import com.example.jo_gpt_program.gpt.dto.MyChatDTO;
 import com.example.jo_gpt_program.gpt.dto.ShowChatDTO;
@@ -76,6 +77,15 @@ public class ContentsController {
         Set<ShowChatDTO> showChatList = contentsService.getChattingList(authHeader);
         log.debug("showChatListssss={}", showChatList);
         return ResponseEntity.ok(showChatList);
+    }
+
+    /* 채팅방 대화 내역 조회 */
+    @GetMapping("/chatRoom/{showChatKey}/messages")
+    public ResponseEntity<List<ChatMessageDTO>> getChatHistory(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long showChatKey) {
+        List<ChatMessageDTO> messages = contentsService.getChatHistory(showChatKey, authHeader);
+        return ResponseEntity.ok(messages);
     }
 
     /* 채팅방 삭제 */

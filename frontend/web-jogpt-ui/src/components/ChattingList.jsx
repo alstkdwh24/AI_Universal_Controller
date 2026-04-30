@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import CONFIG from '../config/config';
 
-export default function ChattingList() {
+export default function ChattingList({ onSelectChat }) {
     const [chatList, setChatList] = useState([]);
     const [search, setSearch] = useState('');
 
@@ -90,7 +90,7 @@ export default function ChattingList() {
             </div>
             <div id="chatting-list">
                 {filtered.map((item, i) => (
-                    <div className="chatting-list-container" key={item.showChatKey ?? i}>
+                    <div className="chatting-list-container" key={item.showChatKey ?? i} onClick={() => !item.mock && onSelectChat && onSelectChat(item.showChatKey)} style={{ cursor: item.mock ? 'default' : 'pointer' }}>
                         <div className="chatting-list-icon-wrap">
                             <img
                                 className="chatting-icon"
@@ -112,7 +112,7 @@ export default function ChattingList() {
                         {!item.mock && (
                             <button
                                 className="chatting-delete-btn"
-                                onClick={() => handleDelete(item.showChatKey)}
+                                onClick={(e) => { e.stopPropagation(); handleDelete(item.showChatKey); }}
                                 title="삭제"
                             >
                                 <i className="fa fa-trash"></i>

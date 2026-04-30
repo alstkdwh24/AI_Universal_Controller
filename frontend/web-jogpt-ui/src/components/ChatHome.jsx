@@ -8,7 +8,7 @@ const MODEL_OPTIONS = [
     { label: 'GPT-4.5',              value: 'gpt-4.5' },
 ];
 
-export default function ChatHome({ user, isActive }) {
+export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -22,6 +22,25 @@ export default function ChatHome({ user, isActive }) {
         if (!el) return;
         el.scrollTop = el.scrollHeight;
     }, [messages, loading]);
+
+    useEffect(() => {
+        if (!selectedChatKey) return;
+        const token = localStorage.getItem('ACCESS_TOKEN');
+        if (!token) return;
+        setLoading(true);
+        fetch(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/${selectedChatKey}/messages`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(res => res.json())
+            .then(data => {
+                setMessages(data.map(m => ({ role: m.role, content: m.content, images: [] })));
+                localStorage.setItem('showChat', selectedChatKey);
+                setShowChat(String(selectedChatKey));
+                if (onChatLoaded) onChatLoaded();
+            })
+            .catch(e => console.error('대화 내역 로드 실패:', e))
+            .finally(() => setLoading(false));
+    }, [selectedChatKey]);
 
     const getValidToken = () => {
         const raw = localStorage.getItem('ACCESS_TOKEN');
@@ -85,7 +104,7 @@ export default function ChatHome({ user, isActive }) {
         const key = await res.text();
         localStorage.setItem('showChat', key);
         setShowChat(key);
-        await fetchGptResponse(token, myContent, selectedModel);
+        await fetchGptResponse(token, myContent, selectedModel, key);
     };
 
     const continueSend = async (token, myContent, chatKey) => {
@@ -94,10 +113,10 @@ export default function ChatHome({ user, isActive }) {
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ myChatContents: myContent, showChatKey: chatKey })
         });
-        await fetchGptResponse(token, myContent, selectedModel);
+        await fetchGptResponse(token, myContent, selectedModel, chatKey);
     };
 
-    const fetchGptResponse = async (token, myContent, model) => {
+    const fetchGptResponse = async (token, myContent, model, chatKey) => {
         const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/gptContents`, {
             method: 'POST',
             headers: {
@@ -105,7 +124,7 @@ export default function ChatHome({ user, isActive }) {
                 'Content-Type': 'application/json',
                 'X-Model': model,
             },
-            body: JSON.stringify({ myChatContents: myContent })
+            body: JSON.stringify({ myChatContents: myContent, showChatKey: chatKey })
         });
         const gptText = await res.text();
         if (gptText) {
