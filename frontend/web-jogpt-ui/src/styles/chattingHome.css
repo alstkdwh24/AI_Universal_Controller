@@ -1,7 +1,14 @@
 /* GPT 답변 등장 애니메이션 */
 @keyframes fadeSlideIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .gptContents {
@@ -10,8 +17,15 @@
 
 /* 스트리밍 중 커서 */
 @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
 }
 
 .streaming-cursor::after {
@@ -42,8 +56,9 @@
     border-radius: 5px;
     padding: 1rem;
     font-family: 'D2Coding', sans-serif;
-    line-height: 1.6; /* 폰트 크기의 1.6배 간격 (가장 추천하는 가독성 범위: 1.5 ~ 1.8) */
-    color:#101D42;
+    line-height: 1.6;
+    /* 폰트 크기의 1.6배 간격 (가장 추천하는 가독성 범위: 1.5 ~ 1.8) */
+    color: #101D42;
 
 }
 
@@ -54,7 +69,8 @@
     align-items: flex-start;
     width: 100%;
     justify-content: flex-start;
-    margin-bottom: 20px; /* 단락 아래에 20px만큼 공간을 만듭니다 */
+    margin-bottom: 20px;
+    /* 단락 아래에 20px만큼 공간을 만듭니다 */
 
 }
 
@@ -62,8 +78,10 @@
     border-radius: 5px;
     padding: 1rem;
     font-family: 'D2Coding', sans-serif;
-    line-height: 1.6; /* 폰트 크기의 1.6배 간격 (가장 추천하는 가독성 범위: 1.5 ~ 1.8) */
-    color: #0F172A;  /* 기존 white → 다크 네이비 그레이로 변경 */
+    line-height: 1.6;
+    /* 폰트 크기의 1.6배 간격 (가장 추천하는 가독성 범위: 1.5 ~ 1.8) */
+    color: #0F172A;
+    /* 기존 white → 다크 네이비 그레이로 변경 */
 }
 
 /* Gemini 스타일 로딩 */
@@ -81,13 +99,11 @@
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    background: conic-gradient(
-        from 0deg,
-        #3A6BF5 0%,
-        #7BA7FF 40%,
-        transparent 65%,
-        transparent 100%
-    );
+    background: conic-gradient(from 0deg,
+            #3A6BF5 0%,
+            #7BA7FF 40%,
+            transparent 65%,
+            transparent 100%);
     -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #fff calc(100% - 3.5px));
     mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #fff calc(100% - 3.5px));
     animation: gemini-spin 1s linear infinite;
@@ -104,12 +120,23 @@
 }
 
 @keyframes gemini-spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 @keyframes gemini-pulse {
-    0%, 100% { opacity: 1;   transform: scale(1); }
-    50%       { opacity: 0.5; transform: scale(0.8); }
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(0.8);
+    }
 }
 
 /* Markdown 렌더링 스타일 */
@@ -120,9 +147,17 @@
     font-weight: 600;
 }
 
-#realGeminiContent h1 { font-size: 1.4rem; }
-#realGeminiContent h2 { font-size: 1.2rem; }
-#realGeminiContent h3 { font-size: 1.05rem; }
+#realGeminiContent h1 {
+    font-size: 1.4rem;
+}
+
+#realGeminiContent h2 {
+    font-size: 1.2rem;
+}
+
+#realGeminiContent h3 {
+    font-size: 1.05rem;
+}
 
 #realGeminiContent p {
     margin: 0.4rem 0;
@@ -210,7 +245,7 @@
 }
 
 /*채팅 폰트 */
-.my-gemini-talk{
+.my-gemini-talk {
     font-family: 'Noto Sans KR', sans-serif;
     overflow-y: scroll;
     /* 1. Firefox: 표준 속성 (너비를 none으로 설정) */
@@ -248,6 +283,46 @@
     box-shadow: 0 2px 8px rgba(58, 107, 245, 0.1);
 }
 
+.attached-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px 0;
+}
+
+.attached-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #EEF4FF;
+    border: 1px solid #D0DFFF;
+    border-radius: 8px;
+    padding: 2px 6px;
+    font-size: 12px;
+}
+
+.attached-chip .thumb {
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.attached-chip button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #999;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.left-tools {
+    display: flex;
+    flex-direction: row;
+    padding: 0.5rem 1rem;
+}
+
 /* ===== 스마트폰 반응형 (768px 이하) ===== */
 @media (max-width: 768px) {
 
@@ -258,7 +333,8 @@
         flex: 1;
         min-height: 0;
         overflow-y: auto;
-        -webkit-overflow-scrolling: touch; /* iOS 모멘텀 스크롤 */
+        -webkit-overflow-scrolling: touch;
+        /* iOS 모멘텀 스크롤 */
         padding: 0 1rem;
         scrollbar-width: none;
         -ms-overflow-style: none;
