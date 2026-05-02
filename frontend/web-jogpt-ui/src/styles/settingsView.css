@@ -18,13 +18,13 @@
 /* 헤더 */
 .sv-header {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: 1rem;
-    padding: 0 1.5rem;
-    height: 56px;
-    border-bottom: 1px solid #E8F0FF;
+    padding: 0 1.5rem 1.2rem;
+    height: 140px;
+    border-bottom: 1px solid #D0DFFF;
     flex-shrink: 0;
-    background: #F6FAFF;
+    background: linear-gradient(160deg, #D6E8FF 0%, #EEF4FF 60%, #F6FAFF 100%);
 }
 
 .sv-back-btn {
@@ -47,8 +47,8 @@
 }
 
 .sv-header-title {
-    font-size: 1.2rem;
-    font-weight: 600;
+    font-size: 1.6rem;
+    font-weight: 700;
     color: #101D42;
 }
 
@@ -207,101 +207,155 @@
     word-break: break-word;
 }
 
-/* 프롬프트 이름 입력 */
-.sv-prompt-name-input {
+/* 목록 페이지 뒤로가기 버튼 */
+.sv-list-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: #3A6BF5;
+    padding: 0.3rem 0;
+}
+
+.sv-list-back-btn:hover {
+    opacity: 0.75;
+}
+
+/* 목록 이동 버튼 */
+.sv-goto-list-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    margin-top: 0.75rem;
+    background: #F0F5FF;
+    border: 1px solid #D0DFFF;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: #333;
+    transition: background 0.15s;
+}
+
+.sv-goto-list-btn:hover {
+    background: #E0ECFF;
+}
+
+.sv-goto-list-btn i {
+    color: #3A6BF5;
+}
+
+/* 새 프롬프트 추가 폼 */
+.sv-add-form {
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px dashed #D0DFFF;
+}
+
+.sv-add-name-input {
     width: 100%;
     border: 1px solid #D0DFFF;
     border-radius: 10px;
-    padding: 0.7rem 1rem;
+    padding: 0.65rem 0.9rem;
+
     font-size: 0.95rem;
     font-family: inherit;
     color: #222;
     background: white;
-    box-sizing: border-box;
     margin-bottom: 0.6rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
 }
 
-.sv-prompt-name-input:focus {
+.sv-add-name-input:focus {
     outline: none;
     border-color: #5B8AF5;
-    box-shadow: 0 0 0 3px rgba(91, 138, 245, 0.12);
 }
 
-.sv-prompt-name-input::placeholder {
-    color: #bbb;
+/* 프롬프트 없음 안내 */
+.sv-no-prompts {
+    font-size: 0.9rem;
+    color: #aaa;
+    text-align: center;
+    padding: 1.5rem 0;
 }
 
-/* 저장된 프롬프트 목록 */
+/* 프롬프트 목록 */
+
 .sv-prompt-list {
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
-    margin-top: 1rem;
+
 }
 
 .sv-prompt-item {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 0.8rem;
+    gap: 0.75rem;
     padding: 0.85rem 1rem;
-    background: white;
     border: 1px solid #E0EAFF;
     border-radius: 12px;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    background: white;
+    transition: border-color 0.15s;
+
 }
 
 .sv-prompt-item--active {
     border-color: #3A6BF5;
     background: #F0F5FF;
-    box-shadow: 0 0 0 2px rgba(58, 107, 245, 0.12);
 }
 
 .sv-prompt-item-info {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
-    flex: 1;
-    min-width: 0;
+
 }
 
 .sv-prompt-item-header {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    flex-wrap: wrap;
+
 }
 
 .sv-prompt-item-name {
     font-size: 0.95rem;
     font-weight: 600;
-    color: #101D42;
+    color: #222;
 }
 
-.sv-prompt-item-badge {
+.sv-applied-badge {
     font-size: 0.72rem;
-    font-weight: 700;
+    font-weight: 600;
     color: #3A6BF5;
-    background: #DDE8FF;
-    padding: 2px 8px;
+    background: #E0ECFF;
     border-radius: 20px;
-    letter-spacing: 0.02em;
+    padding: 1px 8px;
 }
 
-.sv-prompt-item-content {
-    font-size: 0.85rem;
-    color: #666;
-    line-height: 1.5;
+.sv-prompt-item-preview {
+    font-size: 0.82rem;
+    color: #888;
     white-space: pre-wrap;
     word-break: break-word;
-    overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-/* 프롬프트 아이템 버튼 묶음 */
+
 .sv-prompt-item-actions {
     display: flex;
     flex-direction: column;
@@ -309,36 +363,43 @@
     flex-shrink: 0;
 }
 
-.sv-activate-btn {
+.sv-apply-btn {
     padding: 5px 14px;
     font-size: 0.85rem;
-    border-radius: 16px;
+    border-radius: 20px;
+
     background: #3A6BF5;
     color: white;
     border: none;
     cursor: pointer;
+    font-family: inherit;
+
     transition: opacity 0.15s;
     white-space: nowrap;
 }
 
-.sv-activate-btn:hover {
+.sv-apply-btn:hover {
     opacity: 0.85;
 }
 
+.sv-apply-btn--on {
+    background: #34C759;
+}
+
 .sv-delete-btn {
-    padding: 5px 14px;
+    padding: 5px 10px;
     font-size: 0.85rem;
-    border-radius: 16px;
+    border-radius: 20px;
     background: white;
-    color: #E05252;
-    border: 1px solid #F5CCCC;
+    color: #e74c3c;
+    border: 1px solid #f5c0bc;
     cursor: pointer;
     transition: background 0.15s;
-    white-space: nowrap;
 }
 
 .sv-delete-btn:hover {
-    background: #FFF0F0;
+    background: #fff0ef;
+
 }
 
 /* ===== 모바일: 아래에서 슬라이드 업 ===== */

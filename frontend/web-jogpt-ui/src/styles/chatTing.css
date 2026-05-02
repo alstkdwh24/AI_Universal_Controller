@@ -213,10 +213,15 @@
     opacity: 1;
 }
 
-.chatting-delete-btn:hover {
-    background: #FFF0F0;
-    color: #E05252;
-    border-color: #F5CCCC;
+.chatting-list-time-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 1.2rem;
+    scale: 1.2;
+    padding-top: 0.08rem;
+    width: 0.8rem;
+
 }
 
 /* ===== 모바일 반응형 (768px 이하) ===== */
