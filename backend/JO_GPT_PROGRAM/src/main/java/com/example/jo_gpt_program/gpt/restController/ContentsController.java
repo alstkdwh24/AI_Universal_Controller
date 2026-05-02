@@ -1,24 +1,23 @@
 package com.example.jo_gpt_program.gpt.restController;
 
-import com.example.entitycom.dto.MessageDTO;
-import com.example.jo_gpt_program.gpt.dto.ChatMessageDTO;
-import com.example.jo_gpt_program.gpt.dto.MemberPromptDTO;
-import com.example.jo_gpt_program.gpt.dto.MyChatDTO;
-import com.example.jo_gpt_program.gpt.dto.ShowChatDTO;
-import com.example.jo_gpt_program.gpt.service.AlertService;
-import com.example.jo_gpt_program.gpt.service.ContentsService;
-import com.example.memberssecurity.member.service.MemberService;
-import com.example.memberssecurity.security.config.jwt.JWTUtils;
-import lombok.extern.slf4j.Slf4j;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Set;
+
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.util.List;
-import java.util.Set;
+
+
 
 @RestController
 @RequestMapping("/contents")
@@ -59,8 +58,10 @@ public class ContentsController {
     @PostMapping("/gptContents")
     public ResponseEntity<String> getGptContents(@RequestBody MyChatDTO dto,
             @RequestHeader(value = "X-Model", defaultValue = "gemini-3.1-flash-image-preview") String model,
-            @RequestHeader("Authorization") String authHeader) {
-        String response = contentsService.sendGeminiAI(dto, model, authHeader);
+            @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {// 프론트에서 보내는 프롬프트
+        String decoded = customPrompt != null ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8) : null;
+        String response = contentsService.sendGeminiAI(dto, model, decoded);
+
         return ResponseEntity.ok(response);
     }
 
@@ -117,10 +118,15 @@ public class ContentsController {
 
     /* 학술 검색 + AI 답변 */
     @PostMapping("/getScholarContents")
-    public ResponseEntity<String> getScholarContents(@RequestBody MyChatDTO dto,
-            @RequestHeader(value = "X-Model", defaultValue = "gemini-3-flash-preview") String model,
-            @RequestHeader("Authorization") String authHeader) {
-        String response = contentsService.sendWithScholar(dto, model, authHeader);
+    public ResponseEntity<String> postMethodName(@RequestBody MyChatDTO dto,
+            @RequestHeader(value = "X-Model", defaultValue = "gemini-3.1-flash-image-preview") String model,
+            @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {
+
+        String decoded = customPrompt != null ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8) : null;
+        String response = contentsService.sendWithScholar(dto, model, decoded);
+        // TODO: process POST request
+
+
         return ResponseEntity.ok(response);
     }
 
@@ -128,9 +134,11 @@ public class ContentsController {
     @PostMapping("/getRagScholarContents")
     public ResponseEntity<String> getGptRagScholarContents(
             @RequestBody MyChatDTO dto,
-            @RequestHeader(value = "X-Model", defaultValue = "gemini-3-flash-preview") String model,
-            @RequestHeader("Authorization") String authHeader) {
-        String response = contentsService.sendWithRagAndScholar(dto, model, authHeader);
+            @RequestHeader(value = "X-Model", defaultValue = "gemini-3.1-flash-image-preview") String model,
+            @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {
+        String decoded = customPrompt != null ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8) : null;
+        String response = contentsService.sendWithRagAndScholar(dto, model, decoded);
+
         return ResponseEntity.ok(response);
     }
 

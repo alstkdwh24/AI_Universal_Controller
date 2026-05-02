@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import CONFIG from '../config/config';
 
-export default function ChattingList({ onSelectChat }) {
+export default function ChattingList({ onChatSelect }) {
+
     const [chatList, setChatList] = useState([]);
     const [search, setSearch] = useState('');
 
@@ -58,6 +59,21 @@ export default function ChattingList({ onSelectChat }) {
         return `${month}/${day} ${hours}:${minutes}`;
     };
 
+    const handleDelete = async (e, key) => {
+        e.stopPropagation();
+        const token = localStorage.getItem('ACCESS_TOKEN');
+        if (!token) return;
+        try {
+            await fetch(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/${key}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            setChatList(prev => prev.filter(item => String(item.showChatKey) !== String(key)));
+        } catch (e) {
+            console.error('채팅 삭제 실패:', e);
+        }
+    };
+
     const handleSearchInput = (e) => {
         setSearch(e.target.value);
         e.target.style.height = 'auto';
@@ -89,15 +105,19 @@ export default function ChattingList({ onSelectChat }) {
                 </label>
             </div>
             <div id="chatting-list">
-                {filtered.map((item, i) => (
-                    <div className="chatting-list-container" key={item.showChatKey ?? i} onClick={() => !item.mock && onSelectChat && onSelectChat(item.showChatKey)} style={{ cursor: item.mock ? 'default' : 'pointer' }}>
-                        <div className="chatting-list-icon-wrap">
-                            <img
-                                className="chatting-icon"
-                                src={item.mock ? '/image/Gemini_chat.png' : '/image/blueChatTing.png'}
-                                alt="채팅 아이콘"
-                            />
-                        </div>
+                {chatList.map((item, i) => (
+                    <div
+                        className="chatting-list-container"
+                        key={i}
+                        onClick={() => !item.mock && onChatSelect?.(item.showChatKey)}
+                        style={{ cursor: item.mock ? 'default' : 'pointer' }}
+                    >
+                        <img
+                            className="chatting-icon"
+                            src={item.mock ? '/image/Gemini_chat.png' : '/image/blueChatTing.png'}
+                            alt="채팅 아이콘"
+                        />
+
                         <div className="chatting-list-word">
                             <span className="chatting-list-title">
                                 {item.showMyChatContents || '(내용 없음)'}
@@ -112,8 +132,8 @@ export default function ChattingList({ onSelectChat }) {
                         {!item.mock && (
                             <button
                                 className="chatting-delete-btn"
-                                onClick={(e) => { e.stopPropagation(); handleDelete(item.showChatKey); }}
-                                title="삭제"
+                                onClick={(e) => handleDelete(e, item.showChatKey)}
+
                             >
                                 <i className="fa fa-trash"></i>
                             </button>

@@ -327,7 +327,7 @@ body {
 
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    justify-content: flex-end;
     align-items: center;
     gap: 20px;
 }
@@ -338,7 +338,7 @@ body {
     width: 100%;
     /* 반응형이면 width:100%; max-width:260px */
     min-height: 100px;
-
+    margin-bottom: 1rem;
     border: 1px solid #ccc;
     border-radius: 20px;
     background-color: white;

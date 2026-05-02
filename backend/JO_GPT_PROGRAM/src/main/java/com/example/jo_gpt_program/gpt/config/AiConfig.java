@@ -15,7 +15,8 @@ public class AiConfig {
     // ChatMemoryRepository 대화 기록을 어디에 저장할지 정의하는 인터페이스
     // InMemoryChatMemoryRepository 그 구현체로, 서버 메모리(ram)에 대화기록을 저장
     @Bean
-    public ChatMemoryRepository chatMemoryRepository() {
+    public InMemoryChatMemoryRepository chatMemoryRepository() {
+
         return new InMemoryChatMemoryRepository();
     }
 
