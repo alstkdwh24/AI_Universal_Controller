@@ -1,9 +1,17 @@
 package com.example.jo_gpt_program.gpt.service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.content.Media;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
@@ -11,7 +19,9 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.client.RestTemplate;
 
 import com.example.entitycom.entity.chat.ShowChat;
@@ -187,16 +197,34 @@ public class ContentsService {
         // AI 관련 코드
         /* 이미지 모델이면 Google GenAI SDK 직접 호출, 텍스트 모델이면 Spring AI ChatClient 사용 */
         public String sendGeminiAI(MyChatDTO dto, String model, String customPrompt) {
+                UserMessage message;
+
+                if (dto.getFiles() != null && !dto.getFiles().isEmpty()) {
+                        List<Media> mediaList = dto.getFiles().stream()
+                                        .filter(f -> f.getMimeType() != null)
+                                        .map(f -> new Media(MimeTypeUtils.parseMimeType(f.getMimeType()),
+                                                        new ByteArrayResource(Base64.getDecoder().decode(f.getData()))))
+                                        .toList();
+                        message = UserMessage.builder()
+                                        .text(dto.getMyChatContents())
+                                        .media(mediaList)
+                                        .build();
+                } else {
+                        message = UserMessage.builder()
+                                        .text(dto.getMyChatContents())
+                                        .build();
+                }
+
                 String systemPrompt = customPrompt != null && !customPrompt.isBlank() ? customPrompt
                                 : "당신은 JO-GPT 어시스턴트입니다. 항상 한국어로 친절하게 답변하세요.";
 
                 if (model.contains("image")) {
-                        return sendGeminiImageDirect(dto.getMyChatContents(), model, systemPrompt);
+                        return sendGeminiImageDirect(dto.getMyChatContents(), dto.getFiles(), model, systemPrompt);
                 }
 
                 return chatClient.prompt()
                                 .system(systemPrompt)
-                                .user(dto.getMyChatContents())
+                                .messages(message)
                                 .options(GoogleGenAiChatOptions.builder()
                                                 .model(model)
                                                 .temperature(0.7)
@@ -209,7 +237,18 @@ public class ContentsService {
         }
 
         /* Google GenAI SDK 직접 호출 — TEXT + IMAGE 모달리티 설정 후 인라인 이미지 추출 */
-        private String sendGeminiImageDirect(String userMessage, String model, String systemText) {
+        private String sendGeminiImageDirect(String userMessage, List<MyChatDTO.FilePartDTO> files, String model,
+                        String systemText) {
+
+                List<Part> parts = new ArrayList<>();
+                parts.add(Part.fromText(userMessage));
+                if (files != null) {
+                        files.stream()
+                                        .filter(f -> f.getMimeType() != null && f.getData() != null)
+                                        .forEach(f -> parts.add(Part.fromBytes(Base64.getDecoder().decode(f.getData()),
+                                                        f.getMimeType())));
+                }
+
                 Client client = Client.builder().apiKey(geminiApiKey).build();
 
                 Content systemInstruction = Content.builder()
@@ -220,7 +259,7 @@ public class ContentsService {
                 List<Content> contents = List.of(
                                 Content.builder()
                                                 .role("user")
-                                                .parts(Part.fromText(userMessage))
+                                                .parts(parts)
                                                 .build());
 
                 GenerateContentConfig config = GenerateContentConfig.builder()
@@ -268,7 +307,8 @@ public class ContentsService {
                 return textContent;
         }
 
-        // ----------------------------------- RAG: 문서 기반 답변 -----------------------------------
+        // ----------------------------------- RAG: 문서 기반 답변
+        // -----------------------------------
 
         public String ragAnswer(MyChatDTO dto) {
                 List<Document> docs = vectorStore.similaritySearch(

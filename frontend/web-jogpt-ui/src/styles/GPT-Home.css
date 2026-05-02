@@ -430,7 +430,7 @@ body {
 
 /*검색 버튼과 선택*/
 .search-result {
-    width: 14.6rem;
+    width: 20rem;
     display: flex;
     justify-content: center;
     align-items: center;
