@@ -207,6 +207,191 @@
     word-break: break-word;
 }
 
+/* 목록 페이지 뒤로가기 버튼 */
+.sv-list-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: #3A6BF5;
+    padding: 0.3rem 0;
+}
+
+.sv-list-back-btn:hover {
+    opacity: 0.75;
+}
+
+/* 목록 이동 버튼 */
+.sv-goto-list-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    margin-top: 0.75rem;
+    background: #F0F5FF;
+    border: 1px solid #D0DFFF;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: #333;
+    transition: background 0.15s;
+}
+
+.sv-goto-list-btn:hover {
+    background: #E0ECFF;
+}
+
+.sv-goto-list-btn i {
+    color: #3A6BF5;
+}
+
+/* 새 프롬프트 추가 폼 */
+.sv-add-form {
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px dashed #D0DFFF;
+}
+
+.sv-add-name-input {
+    width: 100%;
+    border: 1px solid #D0DFFF;
+    border-radius: 10px;
+    padding: 0.65rem 0.9rem;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: #222;
+    background: white;
+    margin-bottom: 0.6rem;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.sv-add-name-input:focus {
+    outline: none;
+    border-color: #5B8AF5;
+}
+
+/* 프롬프트 없음 안내 */
+.sv-no-prompts {
+    font-size: 0.9rem;
+    color: #aaa;
+    text-align: center;
+    padding: 1.5rem 0;
+}
+
+/* 프롬프트 목록 */
+.sv-prompt-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.sv-prompt-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid #E0EAFF;
+    border-radius: 12px;
+    background: white;
+    transition: border-color 0.15s;
+}
+
+.sv-prompt-item--active {
+    border-color: #3A6BF5;
+    background: #F0F5FF;
+}
+
+.sv-prompt-item-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.sv-prompt-item-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sv-prompt-item-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #222;
+}
+
+.sv-applied-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #3A6BF5;
+    background: #E0ECFF;
+    border-radius: 20px;
+    padding: 1px 8px;
+}
+
+.sv-prompt-item-preview {
+    font-size: 0.82rem;
+    color: #888;
+    white-space: pre-wrap;
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.sv-prompt-item-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.sv-apply-btn {
+    padding: 5px 14px;
+    font-size: 0.85rem;
+    border-radius: 20px;
+    background: #3A6BF5;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+}
+
+.sv-apply-btn:hover {
+    opacity: 0.85;
+}
+
+.sv-apply-btn--on {
+    background: #34C759;
+}
+
+.sv-delete-btn {
+    padding: 5px 10px;
+    font-size: 0.85rem;
+    border-radius: 20px;
+    background: white;
+    color: #e74c3c;
+    border: 1px solid #f5c0bc;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.sv-delete-btn:hover {
+    background: #fff0ef;
+}
+
 /* ===== 모바일: 아래에서 슬라이드 업 ===== */
 @media (max-width: 768px) {
 
