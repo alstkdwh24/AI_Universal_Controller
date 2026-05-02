@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import CONFIG from '../config/config';
 
 const PROMPTS_KEY = 'CUSTOM_PROMPTS';
 const ACTIVE_KEY = 'CUSTOM_PROMPT';
@@ -110,6 +111,7 @@ export default function SettingsView({ onBack, user }) {
         setTimeout(() => setSaved(false), 1800);
     };
 
+
     return (
         <div className="sv-wrap">
             <div className="sv-body">
@@ -140,6 +142,7 @@ export default function SettingsView({ onBack, user }) {
                         <div className="sv-prompt-preview">
                             <span className="sv-prompt-preview-label">현재 적용 중</span>
                             <span className="sv-prompt-preview-text">{activePrompt}</span>
+
                         </div>
                     ) : (
                         <p className="sv-section-desc">적용 중인 프롬프트가 없습니다.</p>

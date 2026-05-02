@@ -47,12 +47,18 @@ public class Members {
     @Column(name = "nickname", nullable = false)
     private String nickname;
 
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role; // 역할 (ADMIN, USER, GUEST 등)
 
     @Column(name = "extra_settings", columnDefinition = "TEXT")
     private String extraSettings; // 추가 설정 리스트 (개인 설정 리스트)
+
+
+    @Column(name = "custom_prompt", columnDefinition = "TEXT")
+    private String customPrompt;
+
 
     // 회원 정보를 참조하기 위한 조인
     @OneToOne(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -93,6 +99,7 @@ public class Members {
     @OneToMany(mappedBy = "members", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ShowChat> showChatList = new ArrayList<>();
 
+
     public void changeMemberId(String memberId) {
         if (memberId != null && !memberId.isEmpty()) {
             this.memberId = memberId;
@@ -102,6 +109,7 @@ public class Members {
     public void changeRole(Role role) {
         if (role != null) {
             this.role = role;
+
         }
     }
 
@@ -114,12 +122,21 @@ public class Members {
         this.nickname = newNickname;
     }
 
+
+
+
     // 삽입할때는 Members 엔티티에서 저장한 후에, 자식 객체를 담아두는 것이 좋습니다. 이렇게 하면 연관관계가 명확해지고, 데이터 일관성을
     // 유지할 수 있습니다.
     public void changeUserCredentials(UserCredentials userCredentials) {
         this.userCredentials = userCredentials;
         if (userCredentials != null && userCredentials.getMember() != this) {
             userCredentials.changeId(this);
+        }
+    }
+
+    public void changeCustomPrompt(String customPrompt) {
+        if (customPrompt != null) {
+            this.customPrompt = customPrompt;
         }
     }
 }

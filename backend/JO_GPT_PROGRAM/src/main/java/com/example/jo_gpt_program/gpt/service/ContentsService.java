@@ -2,6 +2,7 @@ package com.example.jo_gpt_program.gpt.service;
 
 import java.util.ArrayList;
 import java.util.Base64;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.stream.Collectors;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.content.Media;
+
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
@@ -20,18 +22,24 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
+
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.client.RestTemplate;
 
 import com.example.entitycom.entity.chat.ShowChat;
+import com.example.entitycom.entity.gpt.GptChat;
 import com.example.entitycom.entity.log.CreateTimeLogs;
+import com.example.entitycom.entity.member.MemberPrompt;
 import com.example.entitycom.entity.member.Members;
 import com.example.entitycom.entity.member.MyChat;
 import com.example.jo_gpt_program.gpt.dto.ChatMessageDTO;
+
 import com.example.jo_gpt_program.gpt.dto.MyChatDTO;
 import com.example.jo_gpt_program.gpt.dto.ShowChatDTO;
 import com.example.jo_gpt_program.gpt.repository.jpa.CreateTimeRepository;
+import com.example.jo_gpt_program.gpt.repository.jpa.GptChatRepository;
+import com.example.jo_gpt_program.gpt.repository.jpa.MemberPromptRepository;
 import com.example.jo_gpt_program.gpt.repository.jpa.MyChatRepository;
 import com.example.jo_gpt_program.gpt.repository.jpa.ShowChatRepository;
 import com.example.memberssecurity.member.repository.jpa.MemberRepository;
@@ -55,24 +63,30 @@ public class ContentsService {
         private String geminiApiKey;
 
         private final MyChatRepository myChatRepository;
+        private final GptChatRepository gptChatRepository;
         private final RestTemplate restTemplate;
         private final MemberRepository memberRepository;
         private final ShowChatRepository showChatRepository;
         private final CreateTimeRepository createTimeRepository;
         private final ChatClient chatClient;
         private EmbeddingModel embeddingModel;
+
         private final VectorStore vectorStore;
         private final JWTUtils jwtUtils;
         private final ScholarSearchService scholarSearchService;
+        private final MemberPromptRepository memberPromptRepository;
 
         public ContentsService(@Qualifier("myChatRepository") MyChatRepository myChatRepository,
+                        GptChatRepository gptChatRepository,
                         RestTemplate restTemplate, MemberRepository memberRepository,
                         ShowChatRepository showChatRepository,
                         CreateTimeRepository createTimeRepository, JWTUtils jwtUtils, ChatClient chatClient,
                         EmbeddingModel embeddingModel, VectorStore vectorStore,
-                        ScholarSearchService scholarSearchService) {
+                        ScholarSearchService scholarSearchService,
+                        MemberPromptRepository memberPromptRepository) {
                 this.restTemplate = restTemplate;
                 this.myChatRepository = myChatRepository;
+                this.gptChatRepository = gptChatRepository;
                 this.memberRepository = memberRepository;
                 this.showChatRepository = showChatRepository;
                 this.createTimeRepository = createTimeRepository;
@@ -81,6 +95,7 @@ public class ContentsService {
                 this.vectorStore = vectorStore;
                 this.jwtUtils = jwtUtils;
                 this.scholarSearchService = scholarSearchService;
+                this.memberPromptRepository = memberPromptRepository;
         }
 
         /* 유저 정보 불러오기 */
@@ -181,7 +196,6 @@ public class ContentsService {
                         log.debug("chatAttachment={}", chat.getChatAttachment());
                 });
 
-                log.debug("showChatReal:{}", showChats.stream());
                 Set<ShowChatDTO> showChatDTOS = showChats.stream().map(chat -> ShowChatDTO.builder()
                                 .showChatKey(chat.getShowChatKey())
                                 .showChatRegistration(
@@ -360,8 +374,13 @@ public class ContentsService {
                 return embeddingModel.embed(text);
         }
 
+
         // ------------------- 학술검색 + AI 답변 -------------------
         public String sendWithScholar(MyChatDTO dto, String model, String customPrompt) {
+
+        // ----------------------------- 학술검색 -----------------------------
+
+
                 String scholarResults = scholarSearchService.search(dto.getMyChatContents());
 
                 String systemPrompt = """
@@ -369,10 +388,10 @@ public class ContentsService {
                                 검색 결과가 없으면 알고 있는 내용으로 답변하세요.
 
                                 [논문 검색 결과]
-                                %s        ← 첫 번째 자리
+                                %s
 
                                 [추가 지침]
-                                %s        ← 두 번째 자리
+                                %s
                                 """.formatted(
                                 scholarResults.isEmpty() ? "검색 결과 없음" : scholarResults,
                                 customPrompt != null ? customPrompt : "친절하고 학술적으로 답변하세요.");
@@ -393,6 +412,7 @@ public class ContentsService {
 
         // ------------------- 학술검색 + RAG 답변 -------------------
         public String sendWithRagAndScholar(MyChatDTO dto, String model, String customPrompt) {
+
                 List<Document> docs = vectorStore.similaritySearch(
                                 SearchRequest.builder()
                                                 .query(dto.getMyChatContents())
