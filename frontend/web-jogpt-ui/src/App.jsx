@@ -127,6 +127,8 @@ export default function App() {
                     isActive={sidebarActive}
                     onLoginClick={handleLoginClick}
                     onLogout={handleLogout}
+                    isSettings={currentView === 'settings'}
+                    onSettingsBack={() => setCurrentView('home')}
                 />
                 {renderContent()}
             </div>

@@ -18,13 +18,13 @@
 /* 헤더 */
 .sv-header {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: 1rem;
-    padding: 0 1.5rem;
-    height: 56px;
-    border-bottom: 1px solid #E8F0FF;
+    padding: 0 1.5rem 1.2rem;
+    height: 140px;
+    border-bottom: 1px solid #D0DFFF;
     flex-shrink: 0;
-    background: #F6FAFF;
+    background: linear-gradient(160deg, #D6E8FF 0%, #EEF4FF 60%, #F6FAFF 100%);
 }
 
 .sv-back-btn {
@@ -47,8 +47,8 @@
 }
 
 .sv-header-title {
-    font-size: 1.2rem;
-    font-weight: 600;
+    font-size: 1.6rem;
+    font-weight: 700;
     color: #101D42;
 }
 

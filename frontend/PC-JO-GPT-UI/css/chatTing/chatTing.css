@@ -18,8 +18,10 @@
 #chatting-icon {
     width: 4rem;
     height: 4rem;
-    border-radius: 1rem; /* 반지름을 50%로 설정 */
-    object-fit: cover; /* 이미지가 찌그러지지 않게 채움 */
+    border-radius: 1rem;
+    /* 반지름을 50%로 설정 */
+    object-fit: cover;
+    /* 이미지가 찌그러지지 않게 채움 */
 }
 
 /*채팅 컨테이너*/
@@ -31,10 +33,7 @@
     width: 8.4rem;
 }
 
-#real-chatting-container {
-
-
-}
+#real-chatting-container {}
 
 /*채팅 검색 컨테이너*/
 #search-chatting {
@@ -66,7 +65,8 @@
 /*채팅 아이콘 css*/
 #search-icon {
     scale: 1.2;
-    background: linear-gradient(135deg, #A8C8FF, #3A6BF5); /* 그라데이션 배경 설정 */
+    background: linear-gradient(135deg, #A8C8FF, #3A6BF5);
+    /* 그라데이션 배경 설정 */
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -95,7 +95,7 @@
     overflow-y: auto;
 }
 
-.chatting-list-container{
+.chatting-list-container {
     height: 5.4rem;
     border: 1px solid #D0DFFF;
     border-radius: 1rem;
@@ -110,7 +110,7 @@
 }
 
 /*채팅 리스트 안에 이미지*/
-.chatting-icon{
+.chatting-icon {
     width: 2.6rem;
     height: 2.6rem;
     object-fit: cover;
@@ -119,7 +119,7 @@
 }
 
 /*채팅 리스트 제목*/
-.chatting-list-word{
+.chatting-list-word {
     width: 100%;
     display: flex;
     align-items: flex-start;
@@ -131,7 +131,7 @@
 }
 
 /*마지막 채팅 시간을 넣기 위한 css*/
-.chatting-list-time{
+.chatting-list-time {
     width: 100%;
     display: flex;
     flex-direction: row;
@@ -142,7 +142,7 @@
 
 }
 
-.chatting-list-time-text{
+.chatting-list-time-text {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -150,11 +150,11 @@
 
 }
 
-.chatting-list-time-icon{
+.chatting-list-time-icon {
     display: flex;
     align-items: center;
     justify-content: center;
     height: 1.2rem;
     scale: 1.2;
-    padding-top: 0.08rem ;
+    padding-top: 0.08rem;
 }
