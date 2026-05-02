@@ -20,7 +20,7 @@ export default function TopBar({ user, isActive, onLoginClick, onLogout, isSetti
                     </div>
                 ) : (
                     <div id="userProfile" className="topBar-rightRight">
-                        <span id="userNameDisplay">{user.name}</span>님
+                        <span id="userNameDisplay">{user.nickname}</span>님
                         <button className="buttonWhite" style={{ marginLeft: '10px' }} onClick={onLogout}>
                             로그아웃
                         </button>

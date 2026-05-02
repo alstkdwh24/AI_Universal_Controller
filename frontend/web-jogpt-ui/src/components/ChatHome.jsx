@@ -356,7 +356,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
             <div className="realBox">
                 {messages.length === 0 && (
                     <div className="realBoxFont">
-                        안녕하세요 <span id="userName">{user ? user.name : '사용자'}</span>님
+                        안녕하세요 <span id="userName">{user ? user.nickname : '사용자'}</span>님
                     </div>
                 )}
                 <div className="input-wrapper">
