@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import CONFIG from '../config/config';
 
 export default function ChattingList({ onChatSelect }) {
+
     const [chatList, setChatList] = useState([]);
     const [search, setSearch] = useState('');
 
@@ -30,6 +31,22 @@ export default function ChattingList({ onChatSelect }) {
                 { showMyChatContents: '내 물음', showChatRegistration: new Date().toISOString(), mock: true },
                 { showMyChatContents: '내 물음', showChatRegistration: new Date().toISOString(), mock: true },
             ]);
+        }
+    };
+
+    const handleDelete = async (showChatKey) => {
+        const token = localStorage.getItem('ACCESS_TOKEN');
+        if (!token || !showChatKey) return;
+        try {
+            const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/${showChatKey}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                setChatList(prev => prev.filter(item => item.showChatKey !== showChatKey));
+            }
+        } catch (e) {
+            console.error('채팅 삭제 실패:', e);
         }
     };
 
@@ -62,6 +79,10 @@ export default function ChattingList({ onChatSelect }) {
         e.target.style.height = 'auto';
         e.target.style.height = e.target.scrollHeight + 'px';
     };
+
+    const filtered = chatList.filter(item =>
+        !search.trim() || (item.showMyChatContents || '').includes(search.trim())
+    );
 
     return (
         <div className="chatting-container">
@@ -96,8 +117,11 @@ export default function ChattingList({ onChatSelect }) {
                             src={item.mock ? '/image/Gemini_chat.png' : '/image/blueChatTing.png'}
                             alt="채팅 아이콘"
                         />
+
                         <div className="chatting-list-word">
-                            {item.showMyChatContents}
+                            <span className="chatting-list-title">
+                                {item.showMyChatContents || '(내용 없음)'}
+                            </span>
                             <div className="chatting-list-time">
                                 <i className="fa fa-clock-o chatting-list-time-icon"></i>
                                 <span className="chatting-list-time-text">
@@ -109,6 +133,7 @@ export default function ChattingList({ onChatSelect }) {
                             <button
                                 className="chatting-delete-btn"
                                 onClick={(e) => handleDelete(e, item.showChatKey)}
+
                             >
                                 <i className="fa fa-trash"></i>
                             </button>

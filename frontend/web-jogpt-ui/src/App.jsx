@@ -105,6 +105,7 @@ export default function App() {
                 return (
                     <div style={{ display: 'flex', flex: 1, justifyContent: 'center', overflow: 'auto' }}>
                         <ChattingList onChatSelect={(key) => { setSelectedChatKey(key); setCurrentView('home'); }} />
+
                     </div>
                 );
             case 'settings':
