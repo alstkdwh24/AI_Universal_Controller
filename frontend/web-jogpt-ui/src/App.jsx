@@ -7,6 +7,7 @@ import SettingsView from './components/SettingsView';
 import LoginModal from './components/LoginModal';
 import LoginView from './components/LoginView';
 import AlertModal from './components/AlertModal';
+import NicknameSetupModal from './components/NicknameSetupModal';
 import CONFIG from './config/config';
 
 import './styles/GPT-Home.css';
@@ -28,6 +29,8 @@ export default function App() {
     const [showAlert, setShowAlert] = useState(false);
     const [showLoginView, setShowLoginView] = useState(false);
     const [selectedChatKey, setSelectedChatKey] = useState(null);
+    const [showNicknameSetup, setShowNicknameSetup] = useState(false);
+    const [socialNickname, setSocialNickname] = useState('');
 
     /* 모바일 → 화면 전환 / PC → 기존 모달 */
     const handleLoginClick = () => {
@@ -44,7 +47,12 @@ export default function App() {
         if (token) {
             localStorage.setItem('ACCESS_TOKEN', token);
             window.history.replaceState({}, '', '/');
-            showToastMessage('성공적으로 로그인 되었습니다.');
+            if (urlParams.get('needsNickname') === 'true') {
+                setSocialNickname(urlParams.get('socialNickname') || '');
+                setShowNicknameSetup(true);
+            } else {
+                showToastMessage('성공적으로 로그인 되었습니다.');
+            }
         }
         if (urlParams.has('error')) {
             setShowLogin(true);
@@ -128,6 +136,8 @@ export default function App() {
                     isActive={sidebarActive}
                     onLoginClick={handleLoginClick}
                     onLogout={handleLogout}
+                    isSettings={currentView === 'settings'}
+                    onSettingsBack={() => setCurrentView('home')}
                 />
                 {renderContent()}
             </div>
@@ -135,6 +145,18 @@ export default function App() {
             {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
             {showLoginView && <LoginView onClose={() => setShowLoginView(false)} />}
             {showAlert && <AlertModal onClose={() => setShowAlert(false)} />}
+            {showNicknameSetup && (
+                <NicknameSetupModal
+                    socialNickname={socialNickname}
+                    onComplete={(nick) => {
+                        setShowNicknameSetup(false);
+                        setSocialNickname('');
+                        setUser(prev => prev ? { ...prev, nickname: nick } : prev);
+                        fetchMyInfo();
+                        showToastMessage('닉네임이 설정되었습니다. 환영합니다!');
+                    }}
+                />
+            )}
             {toast && <div id="toast" className="show">{toast}</div>}
         </>
     );

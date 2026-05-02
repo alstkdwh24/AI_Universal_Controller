@@ -2,6 +2,7 @@ package com.example.jo_gpt_program.gpt.restController;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -9,12 +10,22 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import com.example.entitycom.dto.MessageDTO;
+import com.example.jo_gpt_program.gpt.dto.ChatMessageDTO;
+import com.example.jo_gpt_program.gpt.dto.MyChatDTO;
+import com.example.jo_gpt_program.gpt.dto.ShowChatDTO;
+import com.example.jo_gpt_program.gpt.service.AlertService;
+import com.example.jo_gpt_program.gpt.service.ContentsService;
+import com.example.memberssecurity.member.service.MemberService;
+import com.example.memberssecurity.security.config.jwt.JWTUtils;
 
 
 
@@ -142,7 +153,15 @@ public class ContentsController {
         return ResponseEntity.ok(response);
     }
 
-    /* 문서 저장 */
+    @GetMapping("/chatRoom/{key}/messages")
+    public ResponseEntity<List<ChatMessageDTO>> getChatMessages(@PathVariable Long key) {
+        List<ChatMessageDTO> messages = contentsService.getChatMessages(key);
+        return ResponseEntity.ok(messages);
+    }
+
+    // 문서 저장
+
+
     @PostMapping("/saveDocument")
     public ResponseEntity<Void> saveDocument(@RequestBody String entity) {
         contentsService.saveDocument(entity);

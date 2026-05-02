@@ -44,27 +44,21 @@ public class Members {
     @Column(name = "member_id", nullable = false)
     private String memberId;
 
-    @Column(name = "name")
-    private String name;
+    @Column(name = "nickname", nullable = false)
+    private String nickname;
 
-    @Column(name = "phone")
-    private String phone;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role; // 역할 (ADMIN, USER, GUEST 등)
 
-    @Column(name = "gender")
-    private String gender;
-
-    @Column(name = "age")
-    private Integer age;
-
     @Column(name = "extra_settings", columnDefinition = "TEXT")
     private String extraSettings; // 추가 설정 리스트 (개인 설정 리스트)
 
+
     @Column(name = "custom_prompt", columnDefinition = "TEXT")
     private String customPrompt;
+
 
     // 회원 정보를 참조하기 위한 조인
     @OneToOne(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -105,20 +99,6 @@ public class Members {
     @OneToMany(mappedBy = "members", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ShowChat> showChatList = new ArrayList<>();
 
-    @Builder.Default
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<MemberPrompt> memberPrompts = new ArrayList<>();
-
-    public void updateProfile(String name, String phone, String gender, Integer age) {
-        if (name != null)
-            this.name = name;
-        if (phone != null)
-            this.phone = phone;
-        if (age != null)
-            this.age = age;
-        if (gender != null)
-            this.gender = gender;
-    }
 
     public void changeMemberId(String memberId) {
         if (memberId != null && !memberId.isEmpty()) {
@@ -126,35 +106,24 @@ public class Members {
         }
     }
 
-    public void changeGender(String gender) {
-        if (gender != null && !gender.isEmpty()) {
-            this.gender = gender;
-        }
-    }
-
-    public void changeAge(Integer age) {
-        if (age != null) {
-            this.age = age;
-        }
-    }
-
-    public void changeName(String name) {
-        if (name != null && !name.isEmpty()) {
-            this.name = name;
-        }
-    }
-
-    public void changePhone(String phone) {
-        if (phone != null && !phone.isEmpty()) {
-            this.phone = phone;
-        }
-    }
-
     public void changeRole(Role role) {
         if (role != null) {
             this.role = role;
+
         }
     }
+
+    // 해결: String 매개변수를 받는 메서드를 직접 선언합니다.
+    public void changeNickname(String newNickname) {
+        // 필요하다면 이곳에 길이 제한 등 검증 로직을 추가할 수 있습니다.
+        if (newNickname == null || newNickname.trim().isEmpty()) {
+            throw new IllegalArgumentException("닉네임은 비어있을 수 없습니다.");
+        }
+        this.nickname = newNickname;
+    }
+
+
+
 
     // 삽입할때는 Members 엔티티에서 저장한 후에, 자식 객체를 담아두는 것이 좋습니다. 이렇게 하면 연관관계가 명확해지고, 데이터 일관성을
     // 유지할 수 있습니다.

@@ -34,7 +34,7 @@ import com.example.entitycom.entity.member.MemberPrompt;
 import com.example.entitycom.entity.member.Members;
 import com.example.entitycom.entity.member.MyChat;
 import com.example.jo_gpt_program.gpt.dto.ChatMessageDTO;
-import com.example.jo_gpt_program.gpt.dto.MemberPromptDTO;
+
 import com.example.jo_gpt_program.gpt.dto.MyChatDTO;
 import com.example.jo_gpt_program.gpt.dto.ShowChatDTO;
 import com.example.jo_gpt_program.gpt.repository.jpa.CreateTimeRepository;
@@ -208,6 +208,29 @@ public class ContentsService {
                                                 : null)
                                 .build()).collect(Collectors.toSet());
                 return showChatDTOS;
+        }
+
+        /* 채팅방의 대화 내역 불러오기 (user + ai 메시지를 시간순 정렬) */
+        @Transactional
+        public List<ChatMessageDTO> getChatMessages(Long showChatKey) {
+                ShowChat showChat = showChatRepository.findShowChatByShowChatKey(showChatKey)
+                                .orElseThrow(() -> new RuntimeException("ShowChat not found: " + showChatKey));
+
+                List<Object[]> entries = new ArrayList<>();
+                if (showChat.getMyChat() != null) {
+                        showChat.getMyChat().forEach(m ->
+                                entries.add(new Object[]{ m.getMyChatKey(), "user", m.getMyChatContents() }));
+                }
+                if (showChat.getGptChat() != null) {
+                        showChat.getGptChat().forEach(g ->
+                                entries.add(new Object[]{ g.getGptChatKey(), "ai", g.getGptChatContents() }));
+                }
+
+                entries.sort(java.util.Comparator.comparingLong(e -> (Long) e[0]));
+
+                return entries.stream()
+                                .map(e -> new ChatMessageDTO((String) e[1], (String) e[2]))
+                                .collect(Collectors.toList());
         }
 
         // AI 관련 코드
