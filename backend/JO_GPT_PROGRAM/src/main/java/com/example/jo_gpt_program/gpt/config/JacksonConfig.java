@@ -3,11 +3,13 @@ package com.example.jo_gpt_program.gpt.config;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
-// Jackson 숫자 길이 제한 완화 + 알 수 없는 필드 무시 설정
+// Jackson 숫자 길이 제한 완화 + 알 수 없는 필드 무시 + LocalDateTime 직렬화 설정
 @Configuration
 public class JacksonConfig {
 
@@ -20,8 +22,10 @@ public class JacksonConfig {
                 .maxNumberLength(50000)
                 .build()
         );
-        // ChromaDB 응답에 Spring AI가 모르는 필드(configuration_json 등)가 있어도 무시
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        // LocalDateTime 등 Java 8 날짜/시간 타입 직렬화 지원
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         return mapper;
     }
 }

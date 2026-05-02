@@ -18,13 +18,6 @@ export default function SettingsView({ onBack, user }) {
 
     return (
         <div className="sv-wrap">
-            <div className="sv-header">
-                <button className="sv-back-btn" onClick={onBack}>
-                    <i className="fa fa-arrow-left"></i>
-                </button>
-                <h2 className="sv-header-title">설정</h2>
-            </div>
-
             <div className="sv-body">
 
                 {/* 계정 섹션 */}

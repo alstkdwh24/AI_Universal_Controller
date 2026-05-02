@@ -1,8 +1,15 @@
-export default function TopBar({ user, isActive, onLoginClick, onLogout }) {
+export default function TopBar({ user, isActive, onLoginClick, onLogout, isSettings, onSettingsBack }) {
     return (
         <div className={isActive ? 'topBarActive' : 'topBar'}>
-            <div className="topBar-left">
-                <h2>JOGPT</h2>
+            <div className={isSettings ? 'topBar-left topBar-left--narrow' : 'topBar-left'}>
+                {isSettings ? (
+                    <button className="topbar-settings-back" onClick={onSettingsBack}>
+                        <i className="fa fa-arrow-left"></i>
+                        <span>설정</span>
+                    </button>
+                ) : (
+                    <h2>JOGPT</h2>
+                )}
             </div>
             <div className="topBar-middle"></div>
             <div className="topBar-right">
