@@ -9,6 +9,7 @@ const TICK_MS = 18;
 const MODEL_OPTIONS = [
     { label: 'gemini-3.1-flash-image-preview', value: 'gemini-3.1-flash-image-preview' },
     { label: 'GPT-4.5', value: 'gpt-4.5' },
+
 ];
 
 export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded }) {
@@ -23,6 +24,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
         }
         return stored;
     });
+
     const [selectedModel, setSelectedModel] = useState(MODEL_OPTIONS[0].value);
     const textareaRef = useRef(null);
     const chatContainerRef = useRef(null);
@@ -44,6 +46,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
     }, []);
 
     useEffect(() => {
+
         if (!selectedChatKey) return;
         const token = localStorage.getItem('ACCESS_TOKEN');
         if (!token) return;
@@ -139,6 +142,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
 
     const fetchGptResponse = async (token, myContent, model, chatKey) => {
         const customPrompt = localStorage.getItem('CUSTOM_PROMPT')?.trim();
+
         const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/gptContents`, {
             method: 'POST',
             headers: {
@@ -173,6 +177,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
         const gptText = await res.text();
         if (gptText) {
             let fullContent = gptText;
+
             let images = [];
             try {
                 const parsed = JSON.parse(gptText);
@@ -204,6 +209,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
                     sendBrowserNotification(fullContent);
                 }
             }, TICK_MS);
+
 
             await fetch(`${CONFIG.API_CONTENTS_URL}/contents/notifications`, {
                 method: 'POST',
@@ -323,6 +329,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
                                     <div
                                         id="realGeminiContent"
                                         className={msg.streaming ? 'streaming-cursor' : ''}
+
                                         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(msg.content)) }}
                                     />
                                 )}

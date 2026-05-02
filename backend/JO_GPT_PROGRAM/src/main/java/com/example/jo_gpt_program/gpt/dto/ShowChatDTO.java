@@ -18,13 +18,10 @@ public class ShowChatDTO {
     @JsonSerialize(using = ToStringSerializer.class)
     private Long showChatKey;
 
+    private Long showChatKey;
+
     private String showMyChatContents;
 
-
     private LocalDateTime showChatRegistration;
-
-
-
-
 
 }
