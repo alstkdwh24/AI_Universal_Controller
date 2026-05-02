@@ -1,24 +1,45 @@
 package com.example.jo_gpt_program.gpt.dto;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class MyChatDTO {
-    Long myChatKey;
+    private Long myChatKey;
     @JsonProperty("myChatContents") // JSON의 "gptContents"를 이 필드에 담겠다는 의미
-    String myChatContents;
-    String myChatImage;
-    LocalDateTime myChatRegistration;
-    Long showChatKey;
+    private String myChatContents;
+    private String myChatImage;
+    private LocalDateTime myChatRegistration;
+    private Long showChatKey;
+    private List<FilePartDTO> files;
+
+    public static class FilePartDTO {
+        private String name;
+        private String mimeType;
+        private String data;
+        private String type;
+
+        // 👇 이렇게 직접 통로(Getter)를 만들어 줍니다.
+        public String getData() {
+            return this.data;
+        }
+
+        public String getMimeType() {
+            return this.mimeType;
+        }
+
+        // (필요하다면 다른 필드들의 getter/setter도 추가)
+    }
 
     public void changeMyChatContents(String myChatContents) {
         this.myChatContents = myChatContents;

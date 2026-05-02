@@ -7,7 +7,7 @@ const CHUNK_SIZE = 4;
 const TICK_MS = 18;
 
 const MODEL_OPTIONS = [
-    { label: 'Gemini 3 Flash Image', value: 'gemini-3.1-flash-image-preview' },
+    { label: 'gemini-3.1-flash-image-preview', value: 'gemini-3.1-flash-image-preview' },
     { label: 'GPT-4.5', value: 'gpt-4.5' },
 ];
 
@@ -380,7 +380,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
                                 ref={fileInputRef}
                                 type="file"
                                 multiple
-                                accept="image/*, audio/*, .pdf, .doc, .docx, .xls, .xlsx, .ppt, .pptx, .txt"
+                                accept="image/*, audio/*, .pdf"
                                 style={{ display: 'none' }}
                                 onChange={handleFileSelect}
                             />
@@ -393,7 +393,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
                                     {attachedFiles.map((file, idx) => (
                                         <span key={idx} className='attached-chip'>
                                             {file.type === 'image'
-                                                ? <img src={`data:${file.mimeType};base64,${file.base64}`} alt={file.name} className="thumb" />
+                                                ? <img src={`data:${file.mimeType};base64,${file.data}`} alt={file.name} className="thumb" />
                                                 : <i className="fa fa-file" />}
                                             <button onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== idx))}>×</button>
                                         </span>

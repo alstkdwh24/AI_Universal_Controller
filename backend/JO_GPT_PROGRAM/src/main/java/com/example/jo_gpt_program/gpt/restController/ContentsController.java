@@ -68,7 +68,7 @@ public class ContentsController {
 
     @PostMapping("/gptContents")
     public ResponseEntity<String> getGptContents(@RequestBody MyChatDTO dto,
-            @RequestHeader(value = "X-Model", defaultValue = "gemini-3-flash-preview") String model,
+            @RequestHeader(value = "X-Model", defaultValue = "gemini-3.1-flash-image-preview") String model,
             @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {// 프론트에서 보내는 프롬프트
         String decoded = customPrompt != null ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8) : null;
         String response = contentsService.sendGeminiAI(dto, model, decoded);
@@ -133,7 +133,7 @@ public class ContentsController {
     @PostMapping("/getRagScholarContents")
     public ResponseEntity<String> getGptRagScholarContents(
             @RequestBody MyChatDTO dto,
-            @RequestHeader(value = "X-Model", defaultValue = "gemini-3.0-flash") String model,
+            @RequestHeader(value = "X-Model", defaultValue = "gemini-3.1-flash-image-preview") String model,
             @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {
         String decoded = customPrompt != null ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8) : null;
         String response = contentsService.sendWithRagAndScholar(dto, model, decoded);
