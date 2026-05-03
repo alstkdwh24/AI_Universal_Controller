@@ -21,35 +21,35 @@ export default function LoginView({ onClose }) {
                 </div>
 
                 <div className="lv-social-list">
-                    <button className="lv-social-btn lv-kakao" onClick={() => handleSocialLogin(`${CONFIG.API_BASE_URL}/oauth2/authorization/kakao`)}>
+                    <button className="lv-social-btn lv-kakao" onClick={() => handleSocialLogin(`${CONFIG.AI_MEMBERSECURITY}/oauth2/authorization/kakao`)}>
                         <div className="lv-social-icon">
                             <img src="/image/kakaoLogo.png" alt="카카오" className="lv-social-img" />
                         </div>
                         <span>카카오 로그인</span>
                     </button>
 
-                    <button className="lv-social-btn lv-naver" onClick={() => handleSocialLogin(`${CONFIG.API_BASE_URL}/oauth2/authorization/naver`)}>
+                    <button className="lv-social-btn lv-naver" onClick={() => handleSocialLogin(`${CONFIG.AI_MEMBERSECURITY}/oauth2/authorization/naver`)}>
                         <div className="lv-social-icon">
                             <img src="/image/naver_login.png" alt="네이버" className="lv-social-img" />
                         </div>
                         <span>네이버 로그인</span>
                     </button>
 
-                    <button className="lv-social-btn lv-google" onClick={() => handleSocialLogin(`${CONFIG.API_BASE_URL}/oauth2/authorization/google`)}>
+                    <button className="lv-social-btn lv-google" onClick={() => handleSocialLogin(`${CONFIG.AI_MEMBERSECURITY}/oauth2/authorization/google`)}>
                         <div className="lv-social-icon">
                             <img src="/image/google_login.png" alt="구글" className="lv-social-img" />
                         </div>
                         <span>구글 로그인</span>
                     </button>
 
-                    <button className="lv-social-btn lv-facebook" onClick={() => handleSocialLogin(`${CONFIG.API_BASE_URL}/oauth2/authorization/facebook`)}>
+                    <button className="lv-social-btn lv-facebook" onClick={() => handleSocialLogin(`${CONFIG.AI_MEMBERSECURITY}/oauth2/authorization/facebook`)}>
                         <div className="lv-social-icon">
                             <img src="/image/facebook_login.png" alt="페이스북" className="lv-social-img" />
                         </div>
                         <span>페이스북 로그인</span>
                     </button>
 
-                    <button className="lv-social-btn lv-github" onClick={() => handleSocialLogin(`${CONFIG.API_BASE_URL}/oauth2/authorization/github`)}>
+                    <button className="lv-social-btn lv-github" onClick={() => handleSocialLogin(`${CONFIG.AI_MEMBERSECURITY}/oauth2/authorization/github`)}>
                         <div className="lv-social-icon">
                             <img src="/image/GitHub_login.svg" alt="깃허브" className="lv-social-img" />
                         </div>

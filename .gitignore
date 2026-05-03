@@ -84,4 +84,6 @@ jspm_packages/
 *.json
 *.yaml
 *.venv
+*.env
+*.log
 

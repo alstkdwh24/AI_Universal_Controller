@@ -13,7 +13,7 @@ export default function ChattingList({ onChatSelect }) {
         const token = localStorage.getItem('ACCESS_TOKEN');
         if (token) {
             try {
-                const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/chattingList`, {
+                const res = await fetch(`${CONFIG.AI_JO_GTP}/contents/chattingList`, {
                     method: 'GET',
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
@@ -47,7 +47,7 @@ export default function ChattingList({ onChatSelect }) {
         const token = localStorage.getItem('ACCESS_TOKEN');
         if (!token) return;
         try {
-            await fetch(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/${key}`, {
+            await fetch(`${CONFIG.AI_JO_GTP}/contents/chatRoom/${key}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': 'Bearer ' + token }
             });

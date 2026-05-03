@@ -1,0 +1,26 @@
+# =====================================================
+# JO_GPT_PROGRAM (GPT 서비스 - 8082 포트)
+# 빌드 컨텍스트: 프로젝트 루트
+# docker build -f Dockerfile.jogpt -t jo-gpt .
+# =====================================================
+
+# 1단계: 빌드
+FROM eclipse-temurin:17-jdk AS builder
+WORKDIR /workspace
+
+COPY gradlew gradlew
+COPY gradle/ gradle/
+COPY settings.gradle settings.gradle
+
+# JO_GPT_PROGRAM은 MembersSecurity, EntityCom 둘 다 의존
+COPY backend/EntityCom/ backend/EntityCom/
+COPY backend/MembersSecurity/ backend/MembersSecurity/
+COPY backend/JO_GPT_PROGRAM/ backend/JO_GPT_PROGRAM/
+
+RUN chmod +x gradlew && ./gradlew :JO_GPT_PROGRAM:bootJar --no-daemon
+
+# 2단계: 실행 이미지
+FROM amazoncorretto:17-alpine-jdk
+COPY --from=builder /workspace/backend/JO_GPT_PROGRAM/build/libs/*.jar app.jar
+EXPOSE 8082
+ENTRYPOINT ["java", "-jar", "/app.jar"]

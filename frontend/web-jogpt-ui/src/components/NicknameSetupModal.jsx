@@ -18,7 +18,7 @@ export default function NicknameSetupModal({ socialNickname, onComplete }) {
         setError('');
         try {
             const token = localStorage.getItem('ACCESS_TOKEN');
-            const res = await fetch(`${CONFIG.API_BASE_URL}/login/nickname`, {
+            const res = await fetch(`${CONFIG.AI_MEMBERSECURITY}/login/nickname`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

@@ -4,7 +4,7 @@ export const fetchWithRefresh = async (url, options = {}) => {
     let res = await fetch(url, options);
     if (res.status === 401) {
         // Handle token refresh logic here
-        const refreshResponse = await fetch(`${CONFIG.API_BASE_URL}/refreshToken/login/refresh`, {
+        const refreshResponse = await fetch(`${CONFIG.AI_MEMBERSECURITY}/refreshToken/login/refresh`, {
             method: "POST",
             credentials: "include"
         });

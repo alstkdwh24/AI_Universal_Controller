@@ -64,7 +64,7 @@ export default function App() {
         const token = localStorage.getItem('ACCESS_TOKEN');
         if (!token) return;
         try {
-            const res = await fetch(`${CONFIG.API_BASE_URL}/login/myInfo`, {
+            const res = await fetch(`${CONFIG.AI_MEMBERSECURITY}/login/myInfo`, {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
             if (res.ok) {
@@ -81,7 +81,7 @@ export default function App() {
 
     const handleLogout = async () => {
         try {
-            await fetch(`${CONFIG.API_BASE_URL}/login/logout`, {
+            await fetch(`${CONFIG.AI_MEMBERSECURITY}/login/logout`, {
                 method: 'GET',
                 credentials: 'include'
             });

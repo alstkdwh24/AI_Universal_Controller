@@ -48,7 +48,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
         const token = localStorage.getItem('ACCESS_TOKEN');
         if (!token) return;
         setLoading(true);
-        fetch(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/${selectedChatKey}/messages`, {
+        fetch(`${CONFIG.AI_JO_GTP}/contents/chatRoom/${selectedChatKey}/messages`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
             .then(res => res.json())
@@ -116,7 +116,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
     };
 
     const firstSend = async (token, myContent) => {
-        const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom`, {
+        const res = await fetch(`${CONFIG.AI_JO_GTP}/contents/chatRoom`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ myChatContents: myContent })
@@ -129,7 +129,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
     };
 
     const continueSend = async (token, myContent, chatKey) => {
-        await fetch(`${CONFIG.API_CONTENTS_URL}/contents/myContents`, {
+        await fetch(`${CONFIG.AI_JO_GTP}/contents/myContents`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ myChatContents: myContent, showChatKey: chatKey })
@@ -139,7 +139,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
 
     const fetchGptResponse = async (token, myContent, model, chatKey) => {
         const customPrompt = localStorage.getItem('CUSTOM_PROMPT')?.trim();
-        const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/gptContents`, {
+        const res = await fetch(`${CONFIG.AI_JO_GTP}/contents/gptContents`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -205,7 +205,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
                 }
             }, TICK_MS);
 
-            await fetch(`${CONFIG.API_CONTENTS_URL}/contents/notifications`, {
+            await fetch(`${CONFIG.AI_JO_GTP}/contents/notifications`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: '"gpt 답변이 등록되었습니다."' })
