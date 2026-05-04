@@ -17,13 +17,10 @@ export default function NicknameSetupModal({ socialNickname, onComplete }) {
         setLoading(true);
         setError('');
         try {
-            const token = localStorage.getItem('ACCESS_TOKEN');
-            const res = await fetch(`${CONFIG.AI_MEMBERSECURITY}/login/nickname`, {
+            const res = await fetch(`${CONFIG.API_BASE_URL}/login/nickname`, {
+                headers: { 'Content-Type': 'application/json' },
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
+                credentials: 'include',
                 body: JSON.stringify({ nickname: trimmed })
             });
             if (res.ok) {

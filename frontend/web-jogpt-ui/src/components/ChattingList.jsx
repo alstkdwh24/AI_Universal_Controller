@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import CONFIG from '../config/config';
 
-export default function ChattingList({ onChatSelect }) {
+export default function ChattingList({ onChatSelect, user }) {
     const [chatList, setChatList] = useState([]);
     const [search, setSearch] = useState('');
 
@@ -10,12 +10,11 @@ export default function ChattingList({ onChatSelect }) {
     }, []);
 
     const loadChattingList = async () => {
-        const token = localStorage.getItem('ACCESS_TOKEN');
-        if (token) {
+        if (user) {
             try {
-                const res = await fetch(`${CONFIG.AI_JO_GTP}/contents/chattingList`, {
+                const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/chattingList`, {
                     method: 'GET',
-                    headers: { 'Authorization': 'Bearer ' + token }
+                    credentials: 'include'
                 });
                 if (res.ok) {
                     const data = await res.json();
@@ -44,12 +43,11 @@ export default function ChattingList({ onChatSelect }) {
 
     const handleDelete = async (e, key) => {
         e.stopPropagation();
-        const token = localStorage.getItem('ACCESS_TOKEN');
-        if (!token) return;
+        if (!user) return;
         try {
-            await fetch(`${CONFIG.AI_JO_GTP}/contents/chatRoom/${key}`, {
+            await fetch(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/${key}`, {
                 method: 'DELETE',
-                headers: { 'Authorization': 'Bearer ' + token }
+                credentials: 'include'
             });
             setChatList(prev => prev.filter(item => String(item.showChatKey) !== String(key)));
         } catch (e) {

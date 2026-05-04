@@ -1,24 +1,24 @@
-import { useState, useEffect } from 'react';
-import SideBar from './components/SideBar';
-import TopBar from './components/TopBar';
+import { useEffect, useState } from 'react';
+import AlertModal from './components/AlertModal';
 import ChatHome from './components/ChatHome';
 import ChattingList from './components/ChattingList';
-import SettingsView from './components/SettingsView';
 import LoginModal from './components/LoginModal';
 import LoginView from './components/LoginView';
-import AlertModal from './components/AlertModal';
 import NicknameSetupModal from './components/NicknameSetupModal';
+import SettingsView from './components/SettingsView';
+import SideBar from './components/SideBar';
+import TopBar from './components/TopBar';
 import CONFIG from './config/config';
 
-import './styles/GPT-Home.css';
-import './styles/modelJoin.css';
-import './styles/toastMessage.css';
+import './styles/alertModal.css';
 import './styles/chatTing.css';
 import './styles/chattingHome.css';
-import './styles/alertModal.css';
-import './styles/menuBar.css';
-import './styles/settingsView.css';
+import './styles/GPT-Home.css';
 import './styles/loginView.css';
+import './styles/menuBar.css';
+import './styles/modelJoin.css';
+import './styles/settingsView.css';
+import './styles/toastMessage.css';
 
 export default function App() {
     const [user, setUser] = useState(null);
@@ -43,10 +43,8 @@ export default function App() {
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        if (token) {
-            localStorage.setItem('ACCESS_TOKEN', token);
-            window.history.replaceState({}, '', '/');
+        if (user) {
+            // needsNickname은 UrlParameter로 받아도 무관 (민감정보 아님)
             if (urlParams.get('needsNickname') === 'true') {
                 setSocialNickname(urlParams.get('socialNickname') || '');
                 setShowNicknameSetup(true);
@@ -57,15 +55,15 @@ export default function App() {
         if (urlParams.has('error')) {
             setShowLogin(true);
         }
+        window.history.replaceState({}, '', '/'); // URL에서 쿼리 제거
         fetchMyInfo();
     }, []);
 
     const fetchMyInfo = async () => {
-        const token = localStorage.getItem('ACCESS_TOKEN');
-        if (!token) return;
+
         try {
-            const res = await fetch(`${CONFIG.AI_MEMBERSECURITY}/login/myInfo`, {
-                headers: { 'Authorization': 'Bearer ' + token }
+            const res = await fetch(`${CONFIG.API_BASE_URL}/login/myInfo`, {
+                credentials: 'include',
             });
             if (res.ok) {
                 const data = await res.json();
@@ -81,14 +79,13 @@ export default function App() {
 
     const handleLogout = async () => {
         try {
-            await fetch(`${CONFIG.AI_MEMBERSECURITY}/login/logout`, {
+            await fetch(`${CONFIG.API_BASE_URL}/login/logout`, {
                 method: 'GET',
                 credentials: 'include'
             });
         } catch (e) {
             console.error('로그아웃 요청 실패:', e);
         }
-        localStorage.removeItem('ACCESS_TOKEN');
         localStorage.removeItem('showChat');
         setUser(null);
         showToastMessage('로그아웃 되었습니다.');
@@ -104,7 +101,7 @@ export default function App() {
             case 'chat':
                 return (
                     <div style={{ display: 'flex', flex: 1, justifyContent: 'center', overflow: 'auto' }}>
-                        <ChattingList onChatSelect={(key) => { setSelectedChatKey(key); setCurrentView('home'); }} />
+                        <ChattingList onChatSelect={(key) => { setSelectedChatKey(key); setCurrentView('home'); }} user={user} />
                     </div>
                 );
             case 'settings':

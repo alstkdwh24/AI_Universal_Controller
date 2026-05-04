@@ -4,17 +4,14 @@ export const fetchWithRefresh = async (url, options = {}) => {
     let res = await fetch(url, options);
     if (res.status === 401) {
         // Handle token refresh logic here
-        const refreshResponse = await fetch(`${CONFIG.AI_MEMBERSECURITY}/refreshToken/login/refresh`, {
+        const refreshResponse = await fetch(`${CONFIG.API_BASE_URL}/refreshToken/login/refresh`, {
             method: "POST",
             credentials: "include"
         });
-        if (regfreshResponse.ok) {
-            const newToken = await refreshResponse.text();
-            localStorage.setItem('ACCESS_TOKEN', newToken);
-            options.headers = { ...options.headers, 'Authorization': 'Bearer ' + newToken };
+        if (refreshResponse.ok) {
+            // 토큰은 서버가 쿠키로 세팅 -> 프론트는 그냥 재시도
             res = await fetch(url, options);  // 재시도
         } else {
-            localStorage.removeItem('ACCESS_TOKEN');
             window.location.href = '/';
         }
     }
