@@ -87,3 +87,8 @@ jspm_packages/
 *.env
 *.log
 
+# 대용량 파일 제외
+*.tar
+*.tar.gz
+*.tar.bz2
+
