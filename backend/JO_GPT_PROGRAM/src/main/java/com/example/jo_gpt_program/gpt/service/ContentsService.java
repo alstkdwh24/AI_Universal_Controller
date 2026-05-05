@@ -202,6 +202,12 @@ public class ContentsService {
                 return showChatDTOS;
         }
 
+        /* 채팅방 삭제 */
+        @Transactional
+        public void deleteChat(String authHeader, Long showChatKey) {
+                showChatRepository.deleteById(showChatKey);
+        }
+
         /* 채팅방의 대화 내역 불러오기 (user + ai 메시지를 시간순 정렬) */
         @Transactional
         public List<ChatMessageDTO> getChatMessages(Long showChatKey) {

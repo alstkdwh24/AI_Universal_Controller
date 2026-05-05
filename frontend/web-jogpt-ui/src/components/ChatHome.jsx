@@ -7,7 +7,7 @@ const CHUNK_SIZE = 4;
 const TICK_MS = 18;
 
 const MODEL_OPTIONS = [
-    { label: 'gemini-3.1-flash-image-preview', value: 'gemini-3.1-flash-image-preview' },
+    { label: 'Gemini 3 Flash Image', value: 'gemini-3.1-flash-image-preview' },
     { label: 'GPT-4.5', value: 'gpt-4.5' },
 
 ];
@@ -30,9 +30,8 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
     const chatContainerRef = useRef(null);
     const streamIntervalRef = useRef(null);
     const fileInputRef = useRef(null);
-    // ✅ 수정된 코드 (정상 작동)
-    const [isRecording, setIsRecording] = useState(false); // 녹음 상태 (boolean)
-    const [attachedFiles, setAttachedFiles] = useState([]); // 첨부파일 목록 (배열)
+    const [isRecording, setIsRecording] = useState(false);
+    const [attachedFiles, setAttachedFiles] = useState([]);
     const recognitionRef = useRef(null);
 
     useEffect(() => {
@@ -188,7 +187,6 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
 
             let i = 0;
             clearInterval(streamIntervalRef.current);
-            // CHUNK_SIZE만큼 일정 간격으로 content 업데이트하여 타이핑 애니메이션 효과
             streamIntervalRef.current = setInterval(() => {
                 i = Math.min(i + CHUNK_SIZE, fullContent.length);
                 const chunk = fullContent.slice(0, i);
@@ -199,9 +197,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
                     return next;
                 });
                 if (done) {
-                    // 타이핑 애니메이션을 멈추는 코드
                     clearInterval(streamIntervalRef.current);
-                    // [추가 위치] 답변 애니메이션이 모두 끝난 후 브라우저 알림 발송
                     sendBrowserNotification(fullContent);
                 }
             }, TICK_MS);

@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +25,7 @@ import com.example.entitycom.dto.MessageDTO;
 import com.example.jo_gpt_program.gpt.dto.ChatMessageDTO;
 import com.example.jo_gpt_program.gpt.dto.MyChatDTO;
 import com.example.jo_gpt_program.gpt.dto.ShowChatDTO;
+import com.example.jo_gpt_program.gpt.config.filter.UserInfoDto;
 import com.example.jo_gpt_program.gpt.service.AlertService;
 import com.example.jo_gpt_program.gpt.service.ContentsService;
 
@@ -93,9 +95,8 @@ public class ContentsController {
     /* 채팅방 대화 내역 조회 */
     @GetMapping("/chatRoom/{showChatKey}/messages")
     public ResponseEntity<List<ChatMessageDTO>> getChatHistory(
-            @RequestHeader("Authorization") String authHeader,
             @PathVariable Long showChatKey) {
-        List<ChatMessageDTO> messages = contentsService.getChatHistory(showChatKey, authHeader);
+        List<ChatMessageDTO> messages = contentsService.getChatMessages(showChatKey);
         return ResponseEntity.ok(messages);
     }
 

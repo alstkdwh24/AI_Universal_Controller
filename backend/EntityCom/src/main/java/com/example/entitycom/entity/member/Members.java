@@ -55,6 +55,9 @@ public class Members {
     @Column(name = "extra_settings", columnDefinition = "TEXT")
     private String extraSettings; // 추가 설정 리스트 (개인 설정 리스트)
 
+    @Column(name = "custom_prompt", columnDefinition = "TEXT")
+    private String customPrompt; // 사용자 커스텀 프롬프트
+
 
     // 회원 정보를 참조하기 위한 조인
     @OneToOne(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
