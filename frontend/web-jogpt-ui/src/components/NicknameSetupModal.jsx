@@ -21,6 +21,7 @@ export default function NicknameSetupModal({ socialNickname, onComplete }) {
                 headers: { 'Content-Type': 'application/json' },
                 method: 'PUT',
                 credentials: 'include',
+
                 body: JSON.stringify({ nickname: trimmed })
             });
             if (res.ok) {

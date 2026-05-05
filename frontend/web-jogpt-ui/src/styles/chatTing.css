@@ -97,6 +97,7 @@
 
 .chatting-list-container {
     height: 5.4rem;
+
     border: 1px solid #D0DFFF;
     border-radius: 1rem;
     background-color: white;
@@ -106,6 +107,7 @@
     gap: 1rem;
     padding-left: 1rem;
     padding-right: 1rem;
+
 
 }
 
@@ -173,6 +175,7 @@
     justify-content: center;
     height: 1.2rem;
 
+
 }
 
 .chatting-list-time-icon {
@@ -183,6 +186,7 @@
     scale: 1.2;
     padding-top: 0.08rem;
     width: 0.8rem;
+
 }
 
 /* ===== 모바일 반응형 (768px 이하) ===== */
@@ -200,4 +204,5 @@
         max-height: calc(100vh - 56px - 52px - 8rem);
         overflow-y: auto;
     }
+
 }
