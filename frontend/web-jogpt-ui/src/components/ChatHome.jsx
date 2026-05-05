@@ -9,6 +9,7 @@ const TICK_MS = 18;
 const MODEL_OPTIONS = [
     { label: 'Gemini 3 Flash Image', value: 'gemini-3.1-flash-image-preview' },
     { label: 'GPT-4.5', value: 'gpt-4.5' },
+
 ];
 
 export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded }) {
@@ -23,6 +24,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
         }
         return stored;
     });
+
     const [selectedModel, setSelectedModel] = useState(MODEL_OPTIONS[0].value);
     const textareaRef = useRef(null);
     const chatContainerRef = useRef(null);
@@ -50,6 +52,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
             // fetch() 요청시 브라우저가 쿠키를 자동으로 함께 전송하도록 하는 옵션입니다.
             // 기본값은 'same-origin' 이라 다른 도메인으로 요청할때 쿠키가 안실려가는데, 'include'로 설정하면 cross-origin 요청에도 쿠키를 포함시킵니다.
 
+
         })
             .then(res => res.json())
             .then(data => {
@@ -61,6 +64,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
             .catch(e => console.error('대화 내역 로드 실패:', e))
             .finally(() => setLoading(false));
     }, [selectedChatKey]);
+
 
 
     const handleInput = (e) => {
@@ -80,6 +84,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
         const query = input.trim();
         if (!query || loading) return;
         if (!user) {
+
             alert('로그인 후 이용해주세요');
             return;
         }
@@ -95,6 +100,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
                 await firstSend(myContent);
             } else {
                 await continueSend(myContent, showChat);
+
             }
         } catch (e) {
             console.error(e);
@@ -109,6 +115,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
+
             body: JSON.stringify({ myChatContents: myContent })
         });
         if (!res.ok) throw new Error(`채팅방 생성 실패: ${res.status}`);
@@ -165,6 +172,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
         const gptText = await res.text();
         if (gptText) {
             let fullContent = gptText;
+
             let images = [];
             try {
                 const parsed = JSON.parse(gptText);
@@ -198,6 +206,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
+
                 body: JSON.stringify({ message: '"gpt 답변이 등록되었습니다."' })
             });
         }
@@ -313,6 +322,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
                                     <div
                                         id="realGeminiContent"
                                         className={msg.streaming ? 'streaming-cursor' : ''}
+
                                         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(msg.content)) }}
                                     />
                                 )}

@@ -21,6 +21,7 @@ public class JoGptProgramApplication {
 
     public static void main(String[] args) {
         new SpringApplicationBuilder(JoGptProgramApplication.class).run(args);
+
     }
 
 }
