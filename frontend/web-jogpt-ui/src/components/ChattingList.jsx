@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import CONFIG from '../config/config';
 
-export default function ChattingList({ onChatSelect }) {
+export default function ChattingList({ onChatSelect, user }) {
 
     const [chatList, setChatList] = useState([]);
     const [search, setSearch] = useState('');
@@ -11,12 +11,12 @@ export default function ChattingList({ onChatSelect }) {
     }, []);
 
     const loadChattingList = async () => {
-        const token = localStorage.getItem('ACCESS_TOKEN');
-        if (token) {
+        if (user) {
             try {
                 const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/chattingList`, {
                     method: 'GET',
-                    headers: { 'Authorization': 'Bearer ' + token }
+                    credentials: 'include'
+
                 });
                 if (res.ok) {
                     const data = await res.json();
@@ -34,21 +34,6 @@ export default function ChattingList({ onChatSelect }) {
         }
     };
 
-    const handleDelete = async (showChatKey) => {
-        const token = localStorage.getItem('ACCESS_TOKEN');
-        if (!token || !showChatKey) return;
-        try {
-            const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/${showChatKey}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            if (res.ok) {
-                setChatList(prev => prev.filter(item => item.showChatKey !== showChatKey));
-            }
-        } catch (e) {
-            console.error('채팅 삭제 실패:', e);
-        }
-    };
 
     const formatTime = (dateStr) => {
         const d = new Date(dateStr);
@@ -61,12 +46,12 @@ export default function ChattingList({ onChatSelect }) {
 
     const handleDelete = async (e, key) => {
         e.stopPropagation();
-        const token = localStorage.getItem('ACCESS_TOKEN');
-        if (!token) return;
+        if (!user) return;
         try {
             await fetch(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/${key}`, {
                 method: 'DELETE',
-                headers: { 'Authorization': 'Bearer ' + token }
+                credentials: 'include'
+
             });
             setChatList(prev => prev.filter(item => String(item.showChatKey) !== String(key)));
         } catch (e) {
@@ -80,9 +65,6 @@ export default function ChattingList({ onChatSelect }) {
         e.target.style.height = e.target.scrollHeight + 'px';
     };
 
-    const filtered = chatList.filter(item =>
-        !search.trim() || (item.showMyChatContents || '').includes(search.trim())
-    );
 
     return (
         <div className="chatting-container">
@@ -117,11 +99,9 @@ export default function ChattingList({ onChatSelect }) {
                             src={item.mock ? '/image/Gemini_chat.png' : '/image/blueChatTing.png'}
                             alt="채팅 아이콘"
                         />
-
                         <div className="chatting-list-word">
-                            <span className="chatting-list-title">
-                                {item.showMyChatContents || '(내용 없음)'}
-                            </span>
+                            {item.showMyChatContents}
+
                             <div className="chatting-list-time">
                                 <i className="fa fa-clock-o chatting-list-time-icon"></i>
                                 <span className="chatting-list-time-text">
@@ -144,3 +124,4 @@ export default function ChattingList({ onChatSelect }) {
         </div>
     );
 }
+

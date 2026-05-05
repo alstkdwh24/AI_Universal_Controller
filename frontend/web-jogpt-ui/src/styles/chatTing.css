@@ -96,27 +96,19 @@
 }
 
 .chatting-list-container {
-    min-height: 4.8rem;
+    height: 5.4rem;
+
     border: 1px solid #D0DFFF;
     border-radius: 1rem;
     background-color: white;
     display: flex;
     align-items: center;
-    gap: 0.9rem;
-    padding: 0 1.2rem;
-    cursor: pointer;
-    transition: box-shadow 0.15s, border-color 0.15s;
-}
+    justify-content: space-between;
+    gap: 1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
 
-.chatting-list-container:hover {
-    border-color: #A8C4FF;
-    box-shadow: 0 2px 12px rgba(58, 107, 245, 0.08);
-}
 
-.chatting-list-icon-wrap {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
 }
 
 .chatting-list-container:hover {
@@ -146,71 +138,44 @@
 
 /*채팅 리스트 안에 이미지*/
 .chatting-icon {
-    width: 3rem;
-    height: 3rem;
+    width: 2.6rem;
+    height: 2.6rem;
     object-fit: cover;
-    border-radius: 0.8rem;
+    border-radius: 1rem;
+
 }
 
-/*채팅 리스트 텍스트 영역*/
+/*채팅 리스트 제목*/
 .chatting-list-word {
-    flex: 1;
-    min-width: 0;
+    width: 100%;
     display: flex;
+    align-items: flex-start;
     flex-direction: column;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.1rem;
+    height: 4.2rem;
+
 }
 
-.chatting-list-title {
-    font-size: 1rem;
-    font-weight: 500;
-    color: #101D42;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/*마지막 채팅 시간*/
+/*마지막 채팅 시간을 넣기 위한 css*/
 .chatting-list-time {
+    width: 100%;
     display: flex;
+    flex-direction: row;
     align-items: center;
-    gap: 0.4rem;
-}
+    justify-content: flex-start;
+    gap: 0.5rem;
+    height: 1.2rem;
 
-.chatting-list-time-icon {
-    font-size: 0.8rem;
-    color: #A0B0C8;
-    line-height: 1;
-    width: 0.5rem;
 }
 
 .chatting-list-time-text {
-    font-size: 0.85rem;
-    color: #A0B0C8;
-    line-height: 1;
-}
-
-/* 삭제 버튼 */
-.chatting-delete-btn {
-    flex-shrink: 0;
-    width: 2.2rem;
-    height: 2.2rem;
-    border-radius: 0.6rem;
-    border: 1px solid #EEF0FF;
-    background: #F6FAFF;
-    color: #A0B0D0;
-    font-size: 0.9rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
-    opacity: 0;
-}
+    height: 1.2rem;
 
-.chatting-list-container:hover .chatting-delete-btn {
-    opacity: 1;
+
 }
 
 .chatting-list-time-icon {
@@ -240,8 +205,4 @@
         overflow-y: auto;
     }
 
-    /* 모바일: 삭제 버튼 항상 표시 */
-    .chatting-delete-btn {
-        opacity: 1;
-    }
 }

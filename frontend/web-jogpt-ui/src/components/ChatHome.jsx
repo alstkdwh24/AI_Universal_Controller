@@ -46,13 +46,14 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
     }, []);
 
     useEffect(() => {
-
         if (!selectedChatKey) return;
-        const token = localStorage.getItem('ACCESS_TOKEN');
-        if (!token) return;
         setLoading(true);
         fetch(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/${selectedChatKey}/messages`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            credentials: 'include'
+            // fetch() 요청시 브라우저가 쿠키를 자동으로 함께 전송하도록 하는 옵션입니다.
+            // 기본값은 'same-origin' 이라 다른 도메인으로 요청할때 쿠키가 안실려가는데, 'include'로 설정하면 cross-origin 요청에도 쿠키를 포함시킵니다.
+
+
         })
             .then(res => res.json())
             .then(data => {
@@ -65,16 +66,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
             .finally(() => setLoading(false));
     }, [selectedChatKey]);
 
-    const getValidToken = () => {
-        const raw = localStorage.getItem('ACCESS_TOKEN');
-        const token = (raw || '').trim();
-        if (!token || token.split('.').length !== 3) {
-            localStorage.removeItem('ACCESS_TOKEN');
-            localStorage.removeItem('showChat');
-            return null;
-        }
-        return token;
-    };
+
 
     const handleInput = (e) => {
         setInput(e.target.value);
@@ -92,8 +84,8 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
     const handleSend = async () => {
         const query = input.trim();
         if (!query || loading) return;
-        const token = getValidToken();
-        if (!token) {
+        if (!user) {
+
             alert('로그인 후 이용해주세요');
             return;
         }
@@ -106,9 +98,10 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
 
         try {
             if (!showChat) {
-                await firstSend(token, myContent);
+                await firstSend(myContent);
             } else {
-                await continueSend(token, myContent, showChat);
+                await continueSend(myContent, showChat);
+
             }
         } catch (e) {
             console.error(e);
@@ -118,35 +111,38 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
         }
     };
 
-    const firstSend = async (token, myContent) => {
+    const firstSend = async (myContent) => {
         const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+
             body: JSON.stringify({ myChatContents: myContent })
         });
         if (!res.ok) throw new Error(`채팅방 생성 실패: ${res.status}`);
         const key = await res.text();
         localStorage.setItem('showChat', key);
         setShowChat(key);
-        await fetchGptResponse(token, myContent, selectedModel, key);
+        await fetchGptResponse(myContent, selectedModel, key);
     };
 
-    const continueSend = async (token, myContent, chatKey) => {
+    const continueSend = async (myContent, chatKey) => {
         await fetch(`${CONFIG.API_CONTENTS_URL}/contents/myContents`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ myChatContents: myContent, showChatKey: chatKey })
         });
-        await fetchGptResponse(token, myContent, selectedModel, chatKey);
+        await fetchGptResponse(myContent, selectedModel, chatKey);
     };
 
-    const fetchGptResponse = async (token, myContent, model, chatKey) => {
+    const fetchGptResponse = async (myContent, model, chatKey) => {
         const customPrompt = localStorage.getItem('CUSTOM_PROMPT')?.trim();
-
         const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/gptContents`, {
             method: 'POST',
+            credentials: 'include',
+
             headers: {
-                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
                 'X-Model': model,
                 ...(customPrompt && { 'X-Custom-Prompt': encodeURIComponent(customPrompt) }),
@@ -210,10 +206,11 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
                 }
             }, TICK_MS);
 
-
             await fetch(`${CONFIG.API_CONTENTS_URL}/contents/notifications`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+
                 body: JSON.stringify({ message: '"gpt 답변이 등록되었습니다."' })
             });
         }

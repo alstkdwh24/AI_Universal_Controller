@@ -7,7 +7,8 @@
     <!-- Content Security Policy: recommended for Electron security -->
     <!-- default-src 'self' 기본적으로 현재 도메인만 허용 connect-src 서버 통신 허용 script-src 자바스크립트 허용 style-src css허용 font-src 폰트 로드 허용 ima-src 이미지 로드 허용 -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self';
-               connect-src 'self' http://localhost:8086 http://localhost:8082;
+               connect-src 'self' http://localhost:8086 http://localhost:8082 http://agentcloudllm.me:8086 http://agentcloudllm.me:8082;
+
                script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.jsdelivr.net/npm/sweetalert2@11;
                style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.jsdelivr.net/npm/sweetalert2@11;
                font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.jsdelivr.net/npm/sweetalert2@11;
@@ -148,28 +149,33 @@
             </div>
             <div class="modelJoinSocial">
                 <!--electron은 location.href가 막혀있다. 그래서 onclick="require('electron').shell.openExternal('http://localhost:8086/oauth2/authorization/kakao')" 이런식으로 해야한다.-->
-                <div class="socialJoin-kakao" data-url="http://localhost:8086/oauth2/authorization/kakao">
+                <div class="socialJoin-kakao" data-url="http://agentcloudllm.me:8086/oauth2/authorization/kakao">
+
                     <div class="socialJoins-round"><img src="./image/kakaoLogo.png" class="login-logo" alt="카카오로고">
                     </div>
                     <div class="socialJoins-name">카카오 로그인</div>
                 </div>
-                <div class="socialJoin-naver" data-url="http://localhost:8086/oauth2/authorization/naver">
+                <div class="socialJoin-naver" data-url="http://agentcloudllm.me:8086/oauth2/authorization/naver">
+
                     <div class="socialJoins-round"><img src="./image/naver_login.png" alt="네이버 로그인" class="login-logo">
                     </div>
                     <div class="socialJoins-name">네이버 로그인</div>
                 </div>
-                <div class="socialJoin-google" data-url="http://localhost:8086/oauth2/authorization/google">
+                <div class="socialJoin-google" data-url="http://agentcloudllm.me:8086/oauth2/authorization/google">
+
                     <div class="socialJoins-round"><img src="./image/google_login.png" alt="구글 로그인"
                             class="login-logo login-google"></div>
                     <div class="socialJoins-name">구글 로그인</div>
                 </div>
-                <div class="socialJoin-facebook" data-url="http://localhost:8086/oauth2/authorization/facebook">
+                <div class="socialJoin-facebook" data-url="http://agentcloudllm.me:8086/oauth2/authorization/facebook">
+
                     <div class="socialJoins-round"><img src="./image/facebook_login.png" alt="페이스북 로그인"
                             class="login-logo">
                     </div>
                     <div class="socialJoins-name">페이스북 로그인</div>
                 </div>
-                <div class="socialJoin-github" data-url="http://localhost:8086/oauth2/authorization/github">
+                <div class="socialJoin-github" data-url="http://agentcloudllm.me:8086/oauth2/authorization/github">
+
                     <div class="socialJoins-round"><img src="./image/GitHub_login.svg" alt="깃허브 로그인" class="login-logo">
                     </div>
                     <div class="socialJoins-name">깃허브 로그인</div>

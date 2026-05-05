@@ -22,6 +22,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
@@ -33,17 +34,15 @@ import com.example.entitycom.entity.log.CreateTimeLogs;
 import com.example.entitycom.entity.member.MemberPrompt;
 import com.example.entitycom.entity.member.Members;
 import com.example.entitycom.entity.member.MyChat;
+import com.example.jo_gpt_program.gpt.config.filter.UserInfoDto;
 import com.example.jo_gpt_program.gpt.dto.ChatMessageDTO;
-
 import com.example.jo_gpt_program.gpt.dto.MyChatDTO;
 import com.example.jo_gpt_program.gpt.dto.ShowChatDTO;
 import com.example.jo_gpt_program.gpt.repository.jpa.CreateTimeRepository;
-import com.example.jo_gpt_program.gpt.repository.jpa.GptChatRepository;
-import com.example.jo_gpt_program.gpt.repository.jpa.MemberPromptRepository;
+import com.example.jo_gpt_program.gpt.repository.jpa.MemberRepository;
 import com.example.jo_gpt_program.gpt.repository.jpa.MyChatRepository;
 import com.example.jo_gpt_program.gpt.repository.jpa.ShowChatRepository;
-import com.example.memberssecurity.member.repository.jpa.MemberRepository;
-import com.example.memberssecurity.security.config.jwt.JWTUtils;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
 import com.google.genai.types.Content;
@@ -63,39 +62,33 @@ public class ContentsService {
         private String geminiApiKey;
 
         private final MyChatRepository myChatRepository;
-        private final GptChatRepository gptChatRepository;
+
         private final RestTemplate restTemplate;
         private final MemberRepository memberRepository;
         private final ShowChatRepository showChatRepository;
         private final CreateTimeRepository createTimeRepository;
         private final ChatClient chatClient;
         private EmbeddingModel embeddingModel;
-
         private final VectorStore vectorStore;
-        private final JWTUtils jwtUtils;
         private final ScholarSearchService scholarSearchService;
-        private final MemberPromptRepository memberPromptRepository;
 
         public ContentsService(@Qualifier("myChatRepository") MyChatRepository myChatRepository,
-                        GptChatRepository gptChatRepository,
                         RestTemplate restTemplate, MemberRepository memberRepository,
                         ShowChatRepository showChatRepository,
-                        CreateTimeRepository createTimeRepository, JWTUtils jwtUtils, ChatClient chatClient,
+                        CreateTimeRepository createTimeRepository, ChatClient chatClient,
                         EmbeddingModel embeddingModel, VectorStore vectorStore,
-                        ScholarSearchService scholarSearchService,
-                        MemberPromptRepository memberPromptRepository) {
+                        ScholarSearchService scholarSearchService) {
                 this.restTemplate = restTemplate;
                 this.myChatRepository = myChatRepository;
-                this.gptChatRepository = gptChatRepository;
+
                 this.memberRepository = memberRepository;
                 this.showChatRepository = showChatRepository;
                 this.createTimeRepository = createTimeRepository;
                 this.chatClient = chatClient;
                 this.embeddingModel = embeddingModel;
                 this.vectorStore = vectorStore;
-                this.jwtUtils = jwtUtils;
                 this.scholarSearchService = scholarSearchService;
-                this.memberPromptRepository = memberPromptRepository;
+
         }
 
         /* 유저 정보 불러오기 */
@@ -135,8 +128,9 @@ public class ContentsService {
 
         /* 채팅방 만드는 메서드 */
         @Transactional
-        public Long createChat(String authHeader, MyChatDTO dto) {
-                Members members = this.authHeader(authHeader);
+        public Long createChat(MyChatDTO dto) {
+                Members members = this.getMemberFromContext();
+
                 ShowChat showChat = ShowChat.builder()
                                 .members(members)
                                 .build();
@@ -159,18 +153,13 @@ public class ContentsService {
                 return showChat1.getShowChatKey();
         }
 
-        /* JWT 토큰으로 사용자 정보 가져오기 */
-        private Members authHeader(String authHeader) {
-                if (authHeader == null) {
-                        throw new IllegalArgumentException("Authorization header is missing");
-                }
-                authHeader = authHeader.replace("Bearer ", "");
-                Long memberKey = jwtUtils.getUsername(authHeader);
-                Members members = userInfoTwo(memberKey);
-                if (members == null) {
-                        throw new RuntimeException("Member not Object: " + members);
-                }
-                return members;
+        /* SecurityContextHolder에서 인증된 사용자 정보 추출 */
+        private Members getMemberFromContext() {
+                UserInfoDto userInfo = (UserInfoDto) SecurityContextHolder.getContext().getAuthentication()
+                                .getPrincipal();
+                Long memberKey = Long.parseLong(userInfo.getMemberId());
+                return userInfoTwo(memberKey);
+
         }
 
         /* 유저 정보 불러오기 */
@@ -184,8 +173,9 @@ public class ContentsService {
 
         /* 채팅 리스트 불러오기 */
         @Transactional
-        public Set<ShowChatDTO> getChattingList(String authHeader) {
-                Members members = authHeader(authHeader);
+        public Set<ShowChatDTO> getChattingList() {
+                Members members = getMemberFromContext();
+
                 Set<ShowChat> showChats = showChatRepository.findByMembers(members);
                 showChats.forEach(chat -> {
                         log.debug("showChatKey={}", chat.getShowChatKey());
@@ -195,6 +185,8 @@ public class ContentsService {
                         log.debug("gptChat={}", chat.getGptChat());
                         log.debug("chatAttachment={}", chat.getChatAttachment());
                 });
+
+                log.debug("showChatReal:{}", showChats.stream());
 
                 Set<ShowChatDTO> showChatDTOS = showChats.stream().map(chat -> ShowChatDTO.builder()
                                 .showChatKey(chat.getShowChatKey())
@@ -218,12 +210,13 @@ public class ContentsService {
 
                 List<Object[]> entries = new ArrayList<>();
                 if (showChat.getMyChat() != null) {
-                        showChat.getMyChat().forEach(m ->
-                                entries.add(new Object[]{ m.getMyChatKey(), "user", m.getMyChatContents() }));
+                        showChat.getMyChat().forEach(m -> entries
+                                        .add(new Object[] { m.getMyChatKey(), "user", m.getMyChatContents() }));
                 }
                 if (showChat.getGptChat() != null) {
-                        showChat.getGptChat().forEach(g ->
-                                entries.add(new Object[]{ g.getGptChatKey(), "ai", g.getGptChatContents() }));
+                        showChat.getGptChat().forEach(g -> entries
+                                        .add(new Object[] { g.getGptChatKey(), "ai", g.getGptChatContents() }));
+
                 }
 
                 entries.sort(java.util.Comparator.comparingLong(e -> (Long) e[0]));
@@ -374,13 +367,8 @@ public class ContentsService {
                 return embeddingModel.embed(text);
         }
 
-
         // ------------------- 학술검색 + AI 답변 -------------------
         public String sendWithScholar(MyChatDTO dto, String model, String customPrompt) {
-
-        // ----------------------------- 학술검색 -----------------------------
-
-
                 String scholarResults = scholarSearchService.search(dto.getMyChatContents());
 
                 String systemPrompt = """
@@ -388,10 +376,10 @@ public class ContentsService {
                                 검색 결과가 없으면 알고 있는 내용으로 답변하세요.
 
                                 [논문 검색 결과]
-                                %s
+                                %s        ← 첫 번째 자리
 
                                 [추가 지침]
-                                %s
+                                %s        ← 두 번째 자리
                                 """.formatted(
                                 scholarResults.isEmpty() ? "검색 결과 없음" : scholarResults,
                                 customPrompt != null ? customPrompt : "친절하고 학술적으로 답변하세요.");

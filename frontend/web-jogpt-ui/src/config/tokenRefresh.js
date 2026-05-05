@@ -8,13 +8,11 @@ export const fetchWithRefresh = async (url, options = {}) => {
             method: "POST",
             credentials: "include"
         });
-        if (regfreshResponse.ok) {
-            const newToken = await refreshResponse.text();
-            localStorage.setItem('ACCESS_TOKEN', newToken);
-            options.headers = { ...options.headers, 'Authorization': 'Bearer ' + newToken };
+        if (refreshResponse.ok) {
+            // 토큰은 서버가 쿠키로 세팅 -> 프론트는 그냥 재시도
             res = await fetch(url, options);  // 재시도
         } else {
-            localStorage.removeItem('ACCESS_TOKEN');
+
             window.location.href = '/';
         }
     }

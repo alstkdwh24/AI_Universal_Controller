@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import CONFIG from '../config/config';
+import { useState } from 'react';
+
 
 const PROMPTS_KEY = 'CUSTOM_PROMPTS';
 const ACTIVE_KEY = 'CUSTOM_PROMPT';

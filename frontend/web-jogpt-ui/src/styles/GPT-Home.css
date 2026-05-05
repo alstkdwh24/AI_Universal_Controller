@@ -386,7 +386,8 @@ body {
     box-sizing: border-box;
     font-size: 16px;
     font-family: 'Cafe24Ssurround', sans-serif;
-    /* ← 여기서 적용 */    
+    /* ← 여기서 적용 */
+
 
 }
 
@@ -478,21 +479,6 @@ body {
     align-items: center;
     gap: 0.4rem;
 
-}
-
-.search-real-hide {
-    width: 2rem;
-    height: 36px;
-    border: none;
-    background: transparent;
-    border-radius: 50%;
-    cursor: pointer;
-    padding: 0;
-    display: flex;
-    place-items: center;
-    justify-content: center;
-    align-items: center;
-    flex-shrink: 0;
 }
 
 /*GPT모델 선택 래퍼 (커스텀 화살표용) */

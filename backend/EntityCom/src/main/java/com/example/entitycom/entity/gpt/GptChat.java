@@ -29,9 +29,8 @@ public class GptChat {
     @Column(name = "Gpt_chat_key", unique = true, nullable = false)
     private Long GptChatKey;
 
+    @Column(nullable = false, name = "Gpt_chat_contents", columnDefinition = "TEXT")
 
-    @Lob
-    @Column(nullable = false, name = "Gpt_chat_contents", columnDefinition = "LONGTEXT")
     private String GptChatContents;
 
     @Column(nullable = true, name = "Gpt_chat_image")

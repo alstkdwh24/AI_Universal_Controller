@@ -56,10 +56,6 @@ public class Members {
     private String extraSettings; // 추가 설정 리스트 (개인 설정 리스트)
 
 
-    @Column(name = "custom_prompt", columnDefinition = "TEXT")
-    private String customPrompt;
-
-
     // 회원 정보를 참조하기 위한 조인
     @OneToOne(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private UserCredentials userCredentials;
@@ -109,7 +105,6 @@ public class Members {
     public void changeRole(Role role) {
         if (role != null) {
             this.role = role;
-
         }
     }
 
@@ -121,8 +116,6 @@ public class Members {
         }
         this.nickname = newNickname;
     }
-
-
 
 
     // 삽입할때는 Members 엔티티에서 저장한 후에, 자식 객체를 담아두는 것이 좋습니다. 이렇게 하면 연관관계가 명확해지고, 데이터 일관성을
