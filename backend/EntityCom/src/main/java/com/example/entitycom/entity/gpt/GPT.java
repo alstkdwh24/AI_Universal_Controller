@@ -17,7 +17,6 @@ import java.util.List;
 @Entity
 @Getter
 @Table(name = "gpt")
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class GPT {
@@ -47,6 +46,14 @@ public class GPT {
     @OneToOne(mappedBy = "gpt", cascade = CascadeType.ALL, orphanRemoval = true)
     private CreateTimeLogs createTimeLogs;
 
+    @Builder
+    public GPT(Long GPTKey, Members member, String GptModel) {
+        this.GPTKey = GPTKey;
+        this.member = member;
+        this.GptModel = GptModel;
+        this.gptChat = new ArrayList<>();
+        this.myChat = new ArrayList<>();
+    }
 
     public void setId(Long GPTKey) {
         this.GPTKey = GPTKey;
