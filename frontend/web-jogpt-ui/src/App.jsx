@@ -31,6 +31,7 @@ export default function App() {
     const [selectedChatKey, setSelectedChatKey] = useState(null);
     const [showNicknameSetup, setShowNicknameSetup] = useState(false);
     const [socialNickname, setSocialNickname] = useState('');
+    const [pendingNicknameSetup, setPendingNicknameSetup] = useState(false);
 
     /* 모바일 → 화면 전환 / PC → 기존 모달 */
     const handleLoginClick = () => {
@@ -43,14 +44,10 @@ export default function App() {
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        if (user) {
-            // needsNickname은 UrlParameter로 받아도 무관 (민감정보 아님)
-            if (urlParams.get('needsNickname') === 'true') {
-                setSocialNickname(urlParams.get('socialNickname') || '');
-                setShowNicknameSetup(true);
-            } else {
-                showToastMessage('성공적으로 로그인 되었습니다.');
-            }
+        // needsNickname은 UrlParameter로 받아도 무관 (민감정보 아님)
+        if (urlParams.get('needsNickname') === 'true') {
+            setSocialNickname(urlParams.get('socialNickname') || '');
+            setPendingNicknameSetup(true);
         }
         if (urlParams.has('error')) {
             setShowLogin(true);
@@ -58,6 +55,14 @@ export default function App() {
         window.history.replaceState({}, '', '/'); // URL에서 쿼리 제거
         fetchMyInfo();
     }, []);
+
+    // fetchMyInfo로 user가 세팅된 후 닉네임 모달 표시
+    useEffect(() => {
+        if (user && pendingNicknameSetup) {
+            setShowNicknameSetup(true);
+            setPendingNicknameSetup(false);
+        }
+    }, [user, pendingNicknameSetup]);
 
     const fetchMyInfo = async () => {
 
