@@ -12,6 +12,7 @@ export const fetchWithRefresh = async (url, options = {}) => {
             // 토큰은 서버가 쿠키로 세팅 -> 프론트는 그냥 재시도
             res = await fetch(url, options);  // 재시도
         } else {
+
             window.location.href = '/';
         }
     }

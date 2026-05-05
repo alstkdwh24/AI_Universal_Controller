@@ -388,6 +388,7 @@ body {
     font-family: 'Cafe24Ssurround', sans-serif;
     /* ← 여기서 적용 */
 
+
 }
 
 .fake-input:focus {
@@ -434,6 +435,7 @@ body {
 .search-btn i {
     color: #3A6BF5;
     font-size: 22px;
+
 }
 
 /* 전송 버튼: 채운 원형 스타일 */
@@ -471,10 +473,12 @@ body {
 /*검색 버튼과 선택*/
 .search-result {
     width: 20rem;
+
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 0.4rem;
+
 }
 
 /*GPT모델 선택 래퍼 (커스텀 화살표용) */

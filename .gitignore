@@ -1,3 +1,8 @@
+
+
+
+
+
 HELP.md
 .gradle
 build/
@@ -50,7 +55,6 @@ Thumbs.db
 # Build results
 /build/
 /out/
-*.class
 
 # Gradle
 .gradle/
@@ -91,4 +95,5 @@ jspm_packages/
 *.tar
 *.tar.gz
 *.tar.bz2
+
 

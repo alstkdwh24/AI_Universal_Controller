@@ -3,7 +3,7 @@
     flex-direction: column;
     margin-top: 6rem;
     width: 60rem;
-    height: 49.6rem;
+    height: 56.6rem;
     gap: 1.2rem;
 }
 
@@ -97,6 +97,7 @@
 
 .chatting-list-container {
     height: 5.4rem;
+
     border: 1px solid #D0DFFF;
     border-radius: 1rem;
     background-color: white;
