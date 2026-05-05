@@ -30,6 +30,7 @@ public class GptChat {
     private Long GptChatKey;
 
     @Column(nullable = false, name = "Gpt_chat_contents", columnDefinition = "TEXT")
+
     private String GptChatContents;
 
     @Column(nullable = true, name = "Gpt_chat_image")

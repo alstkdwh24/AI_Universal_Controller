@@ -2,6 +2,7 @@ package com.example.jo_gpt_program.gpt.service;
 
 import java.util.ArrayList;
 import java.util.Base64;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.stream.Collectors;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.content.Media;
+
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
@@ -21,12 +23,15 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.security.core.context.SecurityContextHolder;
+
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.client.RestTemplate;
 
 import com.example.entitycom.entity.chat.ShowChat;
+import com.example.entitycom.entity.gpt.GptChat;
 import com.example.entitycom.entity.log.CreateTimeLogs;
+import com.example.entitycom.entity.member.MemberPrompt;
 import com.example.entitycom.entity.member.Members;
 import com.example.entitycom.entity.member.MyChat;
 import com.example.jo_gpt_program.gpt.config.filter.UserInfoDto;
@@ -37,6 +42,7 @@ import com.example.jo_gpt_program.gpt.repository.jpa.CreateTimeRepository;
 import com.example.jo_gpt_program.gpt.repository.jpa.MemberRepository;
 import com.example.jo_gpt_program.gpt.repository.jpa.MyChatRepository;
 import com.example.jo_gpt_program.gpt.repository.jpa.ShowChatRepository;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
 import com.google.genai.types.Content;
@@ -56,6 +62,7 @@ public class ContentsService {
         private String geminiApiKey;
 
         private final MyChatRepository myChatRepository;
+
         private final RestTemplate restTemplate;
         private final MemberRepository memberRepository;
         private final ShowChatRepository showChatRepository;
@@ -73,6 +80,7 @@ public class ContentsService {
                         ScholarSearchService scholarSearchService) {
                 this.restTemplate = restTemplate;
                 this.myChatRepository = myChatRepository;
+
                 this.memberRepository = memberRepository;
                 this.showChatRepository = showChatRepository;
                 this.createTimeRepository = createTimeRepository;
@@ -80,6 +88,7 @@ public class ContentsService {
                 this.embeddingModel = embeddingModel;
                 this.vectorStore = vectorStore;
                 this.scholarSearchService = scholarSearchService;
+
         }
 
         /* 유저 정보 불러오기 */
@@ -121,6 +130,7 @@ public class ContentsService {
         @Transactional
         public Long createChat(MyChatDTO dto) {
                 Members members = this.getMemberFromContext();
+
                 ShowChat showChat = ShowChat.builder()
                                 .members(members)
                                 .build();
@@ -149,6 +159,7 @@ public class ContentsService {
                                 .getPrincipal();
                 Long memberKey = Long.parseLong(userInfo.getMemberId());
                 return userInfoTwo(memberKey);
+
         }
 
         /* 유저 정보 불러오기 */
@@ -164,6 +175,7 @@ public class ContentsService {
         @Transactional
         public Set<ShowChatDTO> getChattingList() {
                 Members members = getMemberFromContext();
+
                 Set<ShowChat> showChats = showChatRepository.findByMembers(members);
                 showChats.forEach(chat -> {
                         log.debug("showChatKey={}", chat.getShowChatKey());
@@ -175,6 +187,7 @@ public class ContentsService {
                 });
 
                 log.debug("showChatReal:{}", showChats.stream());
+
                 Set<ShowChatDTO> showChatDTOS = showChats.stream().map(chat -> ShowChatDTO.builder()
                                 .showChatKey(chat.getShowChatKey())
                                 .showChatRegistration(
@@ -203,6 +216,7 @@ public class ContentsService {
                 if (showChat.getGptChat() != null) {
                         showChat.getGptChat().forEach(g -> entries
                                         .add(new Object[] { g.getGptChatKey(), "ai", g.getGptChatContents() }));
+
                 }
 
                 entries.sort(java.util.Comparator.comparingLong(e -> (Long) e[0]));
@@ -386,6 +400,7 @@ public class ContentsService {
 
         // ------------------- 학술검색 + RAG 답변 -------------------
         public String sendWithRagAndScholar(MyChatDTO dto, String model, String customPrompt) {
+
                 List<Document> docs = vectorStore.similaritySearch(
                                 SearchRequest.builder()
                                                 .query(dto.getMyChatContents())

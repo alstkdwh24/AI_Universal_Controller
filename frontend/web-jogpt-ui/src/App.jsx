@@ -20,6 +20,7 @@ import './styles/modelJoin.css';
 import './styles/settingsView.css';
 import './styles/toastMessage.css';
 
+
 export default function App() {
     const [user, setUser] = useState(null);
     const [showLogin, setShowLogin] = useState(false);
@@ -45,6 +46,7 @@ export default function App() {
         const urlParams = new URLSearchParams(window.location.search);
         if (user) {
             // needsNickname은 UrlParameter로 받아도 무관 (민감정보 아님)
+
             if (urlParams.get('needsNickname') === 'true') {
                 setSocialNickname(urlParams.get('socialNickname') || '');
                 setShowNicknameSetup(true);
@@ -56,6 +58,7 @@ export default function App() {
             setShowLogin(true);
         }
         window.history.replaceState({}, '', '/'); // URL에서 쿼리 제거
+
         fetchMyInfo();
     }, []);
 
@@ -64,6 +67,7 @@ export default function App() {
         try {
             const res = await fetch(`${CONFIG.API_BASE_URL}/login/myInfo`, {
                 credentials: 'include',
+
             });
             if (res.ok) {
                 const data = await res.json();
@@ -86,6 +90,7 @@ export default function App() {
         } catch (e) {
             console.error('로그아웃 요청 실패:', e);
         }
+
         localStorage.removeItem('showChat');
         setUser(null);
         showToastMessage('로그아웃 되었습니다.');
@@ -102,6 +107,7 @@ export default function App() {
                 return (
                     <div style={{ display: 'flex', flex: 1, justifyContent: 'center', overflow: 'auto' }}>
                         <ChattingList onChatSelect={(key) => { setSelectedChatKey(key); setCurrentView('home'); }} user={user} />
+
                     </div>
                 );
             case 'settings':

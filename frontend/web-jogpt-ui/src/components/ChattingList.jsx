@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import CONFIG from '../config/config';
 
 export default function ChattingList({ onChatSelect, user }) {
+
     const [chatList, setChatList] = useState([]);
     const [search, setSearch] = useState('');
 
@@ -15,6 +16,7 @@ export default function ChattingList({ onChatSelect, user }) {
                 const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/chattingList`, {
                     method: 'GET',
                     credentials: 'include'
+
                 });
                 if (res.ok) {
                     const data = await res.json();
@@ -32,6 +34,7 @@ export default function ChattingList({ onChatSelect, user }) {
         }
     };
 
+
     const formatTime = (dateStr) => {
         const d = new Date(dateStr);
         const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -48,6 +51,7 @@ export default function ChattingList({ onChatSelect, user }) {
             await fetch(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/${key}`, {
                 method: 'DELETE',
                 credentials: 'include'
+
             });
             setChatList(prev => prev.filter(item => String(item.showChatKey) !== String(key)));
         } catch (e) {
@@ -60,6 +64,7 @@ export default function ChattingList({ onChatSelect, user }) {
         e.target.style.height = 'auto';
         e.target.style.height = e.target.scrollHeight + 'px';
     };
+
 
     return (
         <div className="chatting-container">
@@ -96,6 +101,7 @@ export default function ChattingList({ onChatSelect, user }) {
                         />
                         <div className="chatting-list-word">
                             {item.showMyChatContents}
+
                             <div className="chatting-list-time">
                                 <i className="fa fa-clock-o chatting-list-time-icon"></i>
                                 <span className="chatting-list-time-text">
@@ -107,6 +113,7 @@ export default function ChattingList({ onChatSelect, user }) {
                             <button
                                 className="chatting-delete-btn"
                                 onClick={(e) => handleDelete(e, item.showChatKey)}
+
                             >
                                 <i className="fa fa-trash"></i>
                             </button>
@@ -117,3 +124,4 @@ export default function ChattingList({ onChatSelect, user }) {
         </div>
     );
 }
+

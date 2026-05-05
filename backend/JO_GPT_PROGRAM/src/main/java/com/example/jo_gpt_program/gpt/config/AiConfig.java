@@ -19,6 +19,7 @@ public class AiConfig {
     }
     // 기본 시스템 프롬프트
 
+
     @Bean
     public ChatClient chatClient(ChatClient.Builder builder, ChatMemory chatMemory) {
         return builder
