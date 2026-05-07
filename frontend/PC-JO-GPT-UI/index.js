@@ -76,7 +76,7 @@ function handleCustomProtocol(url) {
     }
 
     try {
-        const urlObj = new URL(url.replace('jo-gpt://', 'http://localhost:8086/', 'http://agentcloudllm.me:8086/')); // 프로토콜을 임시로 http로 바꿔서 URL 객체로 파싱
+        const urlObj = new URL(url.replace('jo-gpt://', 'http://localhost:8086/', 'http://agentcloudllm.me/')); // 프로토콜을 임시로 http로 바꿔서 URL 객체로 파싱
         const token = urlObj.searchParams.get('token');
         const error = urlObj.searchParams.get('error');
 

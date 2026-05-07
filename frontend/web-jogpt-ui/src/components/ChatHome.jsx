@@ -2,6 +2,7 @@ import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import { useEffect, useRef, useState } from 'react';
 import CONFIG from '../config/config';
+import { fetchWithRefresh } from '../config/tokenRefresh';
 
 const CHUNK_SIZE = 4;
 const TICK_MS = 18;
@@ -47,7 +48,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
     useEffect(() => {
         if (!selectedChatKey) return;
         setLoading(true);
-        fetch(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/${selectedChatKey}/messages`, {
+        fetchWithRefresh(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/${selectedChatKey}/messages`, {
             credentials: 'include'
             // fetch() 요청시 브라우저가 쿠키를 자동으로 함께 전송하도록 하는 옵션입니다.
             // 기본값은 'same-origin' 이라 다른 도메인으로 요청할때 쿠키가 안실려가는데, 'include'로 설정하면 cross-origin 요청에도 쿠키를 포함시킵니다.
@@ -111,11 +112,10 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
     };
 
     const firstSend = async (myContent) => {
-        const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom`, {
+        const res = await fetchWithRefresh(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom`, {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
-
             body: JSON.stringify({ myChatContents: myContent })
         });
         if (!res.ok) throw new Error(`채팅방 생성 실패: ${res.status}`);
@@ -126,7 +126,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
     };
 
     const continueSend = async (myContent, chatKey) => {
-        await fetch(`${CONFIG.API_CONTENTS_URL}/contents/myContents`, {
+        await fetchWithRefresh(`${CONFIG.API_CONTENTS_URL}/contents/myContents`, {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
@@ -137,7 +137,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
 
     const fetchGptResponse = async (myContent, model, chatKey) => {
         const customPrompt = localStorage.getItem('CUSTOM_PROMPT')?.trim();
-        const res = await fetch(`${CONFIG.API_CONTENTS_URL}/contents/gptContents`, {
+        const res = await fetchWithRefresh(`${CONFIG.API_CONTENTS_URL}/contents/gptContents`, {
             method: 'POST',
             credentials: 'include',
 
@@ -202,11 +202,10 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
                 }
             }, TICK_MS);
 
-            await fetch(`${CONFIG.API_CONTENTS_URL}/contents/notifications`, {
+            fetchWithRefresh(`${CONFIG.API_CONTENTS_URL}/contents/notifications`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-
                 body: JSON.stringify({ message: '"gpt 답변이 등록되었습니다."' })
             });
         }
@@ -276,6 +275,30 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
             // 파일 읽기 시작
             reader.readAsDataURL(file);
         });
+
+    const handlePaste = (e) => {
+        console.log('paste 이벤트 발생', e.clipboardData?.items);
+        const items = Array.from(e.clipboardData?.items || []);
+        console.log('items:', items.map(i => `kind=${i.kind} type=${i.type}`));
+        const fileItems = items.filter(item => item.kind === 'file');
+        if (fileItems.length === 0) return;
+
+        e.preventDefault();
+
+        const files = fileItems.map(item => item.getAsFile()).filter(Boolean);
+        if (files.length === 0) return;
+
+        files.forEach(file => {
+            toBase64(file).then(base64 => {
+                setAttachedFiles(prev => [...prev, {
+                    name: file.name || `pasted-image-${Date.now()}.png`,
+                    mimeType: file.type || 'image/png',
+                    data: base64.split(',')[1],
+                    type: file.type.startsWith('image/') ? 'image' : 'file'
+                }]);
+            });
+        });
+    };
 
     // 음성인식 처리:
     const handleVoice = () => {
@@ -354,7 +377,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
                 )}
             </div>
             <div className="realBox">
-                {messages.length === 0 && (
+                {messages.length === 0 && !loading && (
                     <div className="realBoxFont">
                         안녕하세요 <span id="userName">{user ? user.nickname : '사용자'}</span>님
                     </div>
@@ -368,6 +391,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
                             value={input}
                             onChange={handleInput}
                             onKeyDown={handleKeyDown}
+                            onPaste={handlePaste}
                             autoFocus
                         />
                     </label>

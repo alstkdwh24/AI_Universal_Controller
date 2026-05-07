@@ -2,7 +2,6 @@ package com.example.jo_gpt_program.gpt.service;
 
 import java.util.ArrayList;
 import java.util.Base64;
-
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,7 +12,6 @@ import java.util.stream.Collectors;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.content.Media;
-
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
@@ -23,15 +21,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.security.core.context.SecurityContextHolder;
-
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.client.RestTemplate;
 
 import com.example.entitycom.entity.chat.ShowChat;
-import com.example.entitycom.entity.gpt.GptChat;
 import com.example.entitycom.entity.log.CreateTimeLogs;
-import com.example.entitycom.entity.member.MemberPrompt;
 import com.example.entitycom.entity.member.Members;
 import com.example.entitycom.entity.member.MyChat;
 import com.example.jo_gpt_program.gpt.config.filter.UserInfoDto;
@@ -42,7 +37,6 @@ import com.example.jo_gpt_program.gpt.repository.jpa.CreateTimeRepository;
 import com.example.jo_gpt_program.gpt.repository.jpa.MemberRepository;
 import com.example.jo_gpt_program.gpt.repository.jpa.MyChatRepository;
 import com.example.jo_gpt_program.gpt.repository.jpa.ShowChatRepository;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
 import com.google.genai.types.Content;
@@ -93,6 +87,7 @@ public class ContentsService {
 
         /* 유저 정보 불러오기 */
         public String userInfo(Long memberKey, MyChatDTO dto) {
+                // Optional은 null 이 될수도 값이 있을수도 있음을 표현하는 컨테이너이다.
                 Optional<Members> members = memberRepository.findByMemberKey(memberKey);
                 Members member = members
                                 .orElseThrow(() -> new RuntimeException("Member not found with key: " + memberKey));
@@ -104,6 +99,7 @@ public class ContentsService {
         /* 내가 적은 채팅 DB 저장 */
         @Transactional
         public String myChat(MyChatDTO dto, Members member) {
+                // 값이 있을수도 없을수도 있음을 표현하는 컨테이너 null대신 Optional로 감싸서 NullPointerException 방지
                 Optional<Members> members = memberRepository.findByMemberKey(member.getMemberKey());
                 Optional<ShowChat> showChat = showChatRepository.findShowChatByShowChatKey(dto.getShowChatKey());
                 log.debug("showChatTwo={}", showChat);
@@ -111,6 +107,7 @@ public class ContentsService {
                 Members members1 = members
                                 .orElseThrow(() -> new RuntimeException(
                                                 "Member not found with key: " + member.getMemberKey()));
+                // 값이 있으면 memberrs1에 저장, 없으면 예외 발생
                 ShowChat showChat1 = showChat
                                 .orElseThrow(() -> new RuntimeException(
                                                 "ShowChat not found for showChatKey: " + dto.getShowChatKey()));
@@ -121,7 +118,7 @@ public class ContentsService {
                                 .myChatImage(dto.getMyChatImage())
                                 .createTimeLogs(CreateTimeLogs.builder().build())
                                 .build();
-
+                // DB에 저장
                 MyChat myChat = myChatRepository.save(chat);
                 return myChat.getMyChatContents();
         }
@@ -155,6 +152,7 @@ public class ContentsService {
 
         /* SecurityContextHolder에서 인증된 사용자 정보 추출 */
         private Members getMemberFromContext() {
+                // 유저 정보 추출 위한 과정
                 UserInfoDto userInfo = (UserInfoDto) SecurityContextHolder.getContext().getAuthentication()
                                 .getPrincipal();
                 Long memberKey = Long.parseLong(userInfo.getMemberId());
@@ -164,8 +162,8 @@ public class ContentsService {
 
         /* 유저 정보 불러오기 */
         private Members userInfoTwo(Long memberKey) {
-                Optional<Members> members = memberRepository.findByMemberKey(memberKey);
-                Members member = members
+                // Optional은 null 이 될수도 값이 있을수도 있음을 표현하는 컨테이너이다. memberKey로 멤버 정보 조회
+                Members member = memberRepository.findByMemberKey(memberKey)
                                 .orElseThrow(() -> new RuntimeException("Member not found with key: " + memberKey));
                 log.debug("member={}", member);
                 return member;
@@ -174,8 +172,14 @@ public class ContentsService {
         /* 채팅 리스트 불러오기 */
         @Transactional
         public Set<ShowChatDTO> getChattingList() {
+                // 인증된 사용자 정보 추출
                 Members members = getMemberFromContext();
-
+                // 맴버 정보로 채팅방 조회 Set은 중복 없는 컬렉션, showChatRepository의 findByMembers 메서드로 해당 멤버가
+                // 속한 채팅방들 조회
+                // set 의 특징
+                // 1. 중복불가
+                // 2. 순서 없음
+                // 3. null 하나만 허용
                 Set<ShowChat> showChats = showChatRepository.findByMembers(members);
                 showChats.forEach(chat -> {
                         log.debug("showChatKey={}", chat.getShowChatKey());
@@ -211,20 +215,23 @@ public class ContentsService {
         /* 채팅방의 대화 내역 불러오기 (user + ai 메시지를 시간순 정렬) */
         @Transactional
         public List<ChatMessageDTO> getChatMessages(Long showChatKey) {
+                // 채팅방 조회
                 ShowChat showChat = showChatRepository.findShowChatByShowChatKey(showChatKey)
                                 .orElseThrow(() -> new RuntimeException("ShowChat not found: " + showChatKey));
 
                 List<Object[]> entries = new ArrayList<>();
+                // User 메시지 추가
                 if (showChat.getMyChat() != null) {
                         showChat.getMyChat().forEach(m -> entries
                                         .add(new Object[] { m.getMyChatKey(), "user", m.getMyChatContents() }));
                 }
                 if (showChat.getGptChat() != null) {
+                        // AI 메시지 추가
                         showChat.getGptChat().forEach(g -> entries
                                         .add(new Object[] { g.getGptChatKey(), "ai", g.getGptChatContents() }));
 
                 }
-
+                // 시간순으로 정렬
                 entries.sort(java.util.Comparator.comparingLong(e -> (Long) e[0]));
 
                 return entries.stream()
@@ -235,14 +242,32 @@ public class ContentsService {
         // AI 관련 코드
         /* 이미지 모델이면 Google GenAI SDK 직접 호출, 텍스트 모델이면 Spring AI ChatClient 사용 */
         public String sendGeminiAI(MyChatDTO dto, String model, String customPrompt) {
+                // 유저 메시지 컨텍스트 + 인라인 이미지 포함하여 UserMessage 객체 생성
                 UserMessage message;
 
                 if (dto.getFiles() != null && !dto.getFiles().isEmpty()) {
+                        // 프론트에서 파일을Base64로 변환해서 서버에 전송하면, 이 코드에서 AI가 읽을 수 있는 Media 객체로 변환하는 과정
+
                         List<Media> mediaList = dto.getFiles().stream()
+                                        // 첨부파일 목록을 스트림으로 변환
                                         .filter(f -> f.getMimeType() != null)
-                                        .map(f -> new Media(MimeTypeUtils.parseMimeType(f.getMimeType()),
-                                                        new ByteArrayResource(Base64.getDecoder().decode(f.getData()))))
+                                        // mimeType이 null인 파일 제거 이거는 파일의 종류 / 형식을 문자열로 표현한 식별자입니다.
+                                        .map(f -> new Media(MimeTypeUtils.parseMimeType(f.getMimeType()), // "image/png"
+                                                                                                          // 를 MimeType
+                                                                                                          // 객체로 파씽
+                                                        new ByteArrayResource( // ByteArrayResource로 감쌈 (스프링이 읽을 수 있는
+                                                                               // 리소스 타입)
+                                                                        Base64.getDecoder().decode(f.getData())))) // fi.getData()
+                                                                                                                   // ->
+                                                                                                                   // Base64
+                                                                                                                   // 문자열
+                                                                                                                   // ->
+                                                                                                                   // 바이트
+                                                                                                                   // 배열로
+                                                                                                                   // 디코딩
                                         .toList();
+                        // mediaList에는 AI가 이해할 수 있는 형태로 변환된 첨부파일들이 담겨있음
+                        // mssage 객체는 텍스트 + 미디어를 모두 포함하는 형태로 생성
                         message = UserMessage.builder()
                                         .text(dto.getMyChatContents())
                                         .media(mediaList)
@@ -259,7 +284,7 @@ public class ContentsService {
                 if (model.contains("image")) {
                         return sendGeminiImageDirect(dto.getMyChatContents(), dto.getFiles(), model, systemPrompt);
                 }
-
+                // RstTemplate 기반으로 Spring AI ChatClient를 사용하는 기존 방식 유지
                 return chatClient.prompt()
                                 .system(systemPrompt)
                                 .messages(message)
