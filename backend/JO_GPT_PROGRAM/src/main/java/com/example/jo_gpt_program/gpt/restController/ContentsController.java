@@ -97,6 +97,7 @@ public class ContentsController {
     @GetMapping("/chatRoom/{showChatKey}/messages")
     public ResponseEntity<List<ChatMessageDTO>> getChatHistory(
             @PathVariable Long showChatKey) {
+        // showChatKey를 기반으로 채팅방 대화 내역을 조회하는 메서드이다.
         List<ChatMessageDTO> messages = contentsService.getChatMessages(showChatKey);
         return ResponseEntity.ok(messages);
     }
@@ -106,15 +107,18 @@ public class ContentsController {
     public ResponseEntity<Void> deleteChatRoom(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long showChatKey) {
+        // 채팅방 삭제 메서드
         contentsService.deleteChat(authHeader, showChatKey);
         return ResponseEntity.ok().build();
     }
 
+    // SSE를 이용한 실시간 알림 API AI 답변이 오면 프론트에 실시간으로 알림을 보내주는 API
     @PostMapping(value = "/notifications", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    // sse 란 서버 -> 클라이언트 방향으로 단방향 실시간 데이터 스트림을 전송하는 기숭입니다.
     public SseEmitter getNotifications(@RequestBody MessageDTO messageDTO) {
         String message = messageDTO.getMessage();
         log.debug("messagesssss={}", message);
-        SseEmitter emitter = new SseEmitter(60_000L);
+        SseEmitter emitter = new SseEmitter(60_000L); // 60초 타임아웃
         try {
             if (message != null) {
                 emitter.send(SseEmitter.event()
@@ -124,7 +128,7 @@ public class ContentsController {
         } catch (Exception e) {
             emitter.completeWithError(e);
         }
-        return emitter;
+        return emitter; // 연결 유지하면서 클라이언트로 실시간 알림을 보낼 수 있다.
     }
 
     // 학술 검색 + AI 답변
@@ -133,9 +137,11 @@ public class ContentsController {
             @RequestHeader(value = "X-Model", defaultValue = "gemini-3.0-flash") String model,
 
             @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {
-
+        // 프론트에서 보내는 프롬프트가 있을수도 있고 없을 수도 있기 때문에 required = false로 저장
         String decoded = customPrompt != null ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8) : null;
+        // 이게 null이 아니라면 디코딩해서 decoded에 저정, null이면 null
         String response = contentsService.sendWithScholar(dto, model, decoded);
+        // AI 답변 추출 학술 답변
         // TODO: process POST request
 
         return ResponseEntity.ok(response);
@@ -148,7 +154,9 @@ public class ContentsController {
             @RequestBody MyChatDTO dto,
             @RequestHeader(value = "X-Model", defaultValue = "gemini-3.1-flash-image-preview") String model,
             @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {
+        // 프롬프트 적용
         String decoded = customPrompt != null ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8) : null;
+        // RAD + 학술 검색 동시 적용
         String response = contentsService.sendWithRagAndScholar(dto, model, decoded);
         return ResponseEntity.ok(response);
 
@@ -159,7 +167,7 @@ public class ContentsController {
     @PostMapping("/saveDocument")
     public ResponseEntity<Void> postMethodName(@RequestBody String entity) {
         // TODO: process POST request
-
+        // 문서 저장 API
         contentsService.saveDocument(entity);
         return ResponseEntity.ok().build();
     }

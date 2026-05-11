@@ -150,6 +150,22 @@
     inputText.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') sendBtn.click();
     });
+
+    // 대화기록 불러오기
+    async function loadChatHistory() {
+        const response = await fetch(`/chat/history/${userId}`, {
+            method:'POST'
+        });
+        const messages = await response.json();
+        messages.forEach(msg => {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message', msg.role === 'user' ? 'user' : 'bot');
+            msgDiv.textContent = msg.context;
+            chatDiv.appendChild(msgDiv);
+                }
+        );
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
 </script>
 
 </body>

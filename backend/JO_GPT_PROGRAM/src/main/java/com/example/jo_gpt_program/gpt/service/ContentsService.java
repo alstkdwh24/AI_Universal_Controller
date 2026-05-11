@@ -26,6 +26,7 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.client.RestTemplate;
 
 import com.example.entitycom.entity.chat.ShowChat;
+import com.example.entitycom.entity.gpt.GptChat;
 import com.example.entitycom.entity.log.CreateTimeLogs;
 import com.example.entitycom.entity.member.Members;
 import com.example.entitycom.entity.member.MyChat;
@@ -34,6 +35,7 @@ import com.example.jo_gpt_program.gpt.dto.ChatMessageDTO;
 import com.example.jo_gpt_program.gpt.dto.MyChatDTO;
 import com.example.jo_gpt_program.gpt.dto.ShowChatDTO;
 import com.example.jo_gpt_program.gpt.repository.jpa.CreateTimeRepository;
+import com.example.jo_gpt_program.gpt.repository.jpa.GptChatRepository;
 import com.example.jo_gpt_program.gpt.repository.jpa.MemberRepository;
 import com.example.jo_gpt_program.gpt.repository.jpa.MyChatRepository;
 import com.example.jo_gpt_program.gpt.repository.jpa.ShowChatRepository;
@@ -65,15 +67,17 @@ public class ContentsService {
         private EmbeddingModel embeddingModel;
         private final VectorStore vectorStore;
         private final ScholarSearchService scholarSearchService;
+        private final GptChatRepository gptChatRepository;
 
         public ContentsService(@Qualifier("myChatRepository") MyChatRepository myChatRepository,
                         RestTemplate restTemplate, MemberRepository memberRepository,
                         ShowChatRepository showChatRepository,
                         CreateTimeRepository createTimeRepository, ChatClient chatClient,
                         EmbeddingModel embeddingModel, VectorStore vectorStore,
-                        ScholarSearchService scholarSearchService) {
+                        ScholarSearchService scholarSearchService, GptChatRepository gptChatRepository) {
                 this.restTemplate = restTemplate;
                 this.myChatRepository = myChatRepository;
+                this.gptChatRepository = gptChatRepository;
 
                 this.memberRepository = memberRepository;
                 this.showChatRepository = showChatRepository;
@@ -199,16 +203,21 @@ public class ContentsService {
                                                                 ? chat.getCreateTimeLogs().iterator().next()
                                                                                 .getCreatedAt()
                                                                 : null)
+                                // 채팅방 생성 시각
                                 .showMyChatContents(chat.getMyChat() != null && !chat.getMyChat().isEmpty()
                                                 ? chat.getMyChat().iterator().next().getMyChatContents()
                                                 : null)
+                                // 채팅방 목록에 미리보기로 보여줄 첫 번째 메시지 내용이다.
+
                                 .build()).collect(Collectors.toSet());
+                // Stream의 최종 연산으로, 스트림의 모든 요소를 Set 컬렉션으로 수집한다. 중복된 요소는 하나로 합쳐지고, 순서는 보장되지 않는다.
                 return showChatDTOS;
         }
 
         /* 채팅방 삭제 */
         @Transactional
         public void deleteChat(String authHeader, Long showChatKey) {
+                // 채팅방 삭제 메서드
                 showChatRepository.deleteById(showChatKey);
         }
 
@@ -272,6 +281,7 @@ public class ContentsService {
                                         .text(dto.getMyChatContents())
                                         .media(mediaList)
                                         .build();
+
                 } else {
                         message = UserMessage.builder()
                                         .text(dto.getMyChatContents())
@@ -285,7 +295,7 @@ public class ContentsService {
                         return sendGeminiImageDirect(dto.getMyChatContents(), dto.getFiles(), model, systemPrompt);
                 }
                 // RstTemplate 기반으로 Spring AI ChatClient를 사용하는 기존 방식 유지
-                return chatClient.prompt()
+                String messages = chatClient.prompt()
                                 .system(systemPrompt)
                                 .messages(message)
                                 .options(GoogleGenAiChatOptions.builder()
@@ -297,6 +307,17 @@ public class ContentsService {
                                                 .build())
                                 .call()
                                 .content();
+                if (messages != null) {
+                        GptChat gptChat = GptChat.builder()
+                                        .GptChatContents(messages)
+                                        .build();
+                        gptChatRepository.save(gptChat);
+                        log.info("[sendGeminiAI] 응답 길이={}, 내용={}", messages.length(), messages);
+                } else {
+                        log.warn("[sendGeminiAI] 응답이 null입니다.");
+                }
+
+                return messages;
         }
 
         /* Google GenAI SDK 직접 호출 — TEXT + IMAGE 모달리티 설정 후 인라인 이미지 추출 */
@@ -304,27 +325,28 @@ public class ContentsService {
                         String systemText) {
 
                 List<Part> parts = new ArrayList<>();
-                parts.add(Part.fromText(userMessage));
+                parts.add(Part.fromText(userMessage)); // 사용자 텍스트 질문 추가
                 if (files != null) {
                         files.stream()
                                         .filter(f -> f.getMimeType() != null && f.getData() != null)
                                         .forEach(f -> parts.add(Part.fromBytes(Base64.getDecoder().decode(f.getData()),
                                                         f.getMimeType())));
                 }
-
+                // Gemini 클라이언트 직접 호출 왜 ChatClient 가 아닌 Google GenAI SDK의 Client를 직접 사용합니다. 이미지
+                // 생성 은 Spring AI가 아직 지원하지 않아서 직접 호출하는 것입니다.
                 Client client = Client.builder().apiKey(geminiApiKey).build();
 
                 Content systemInstruction = Content.builder()
                                 .role("system")
                                 .parts(Part.fromText(systemText))
                                 .build();
-
+                // 사용자 메시지 구성
                 List<Content> contents = List.of(
                                 Content.builder()
                                                 .role("user")
-                                                .parts(parts)
+                                                .parts(parts) // 텍스트 + 이미지 파일이 담긴 리스트
                                                 .build());
-
+                // 응답 설정 시스템 프롬프트, 텍스트 + 이미지 둘다 받겠다고 하고, 최대 응답길이 (주로 응답 형식제어)
                 GenerateContentConfig config = GenerateContentConfig.builder()
                                 .systemInstruction(systemInstruction)
                                 .responseModalities("TEXT", "IMAGE")
@@ -332,6 +354,7 @@ public class ContentsService {
                                 .build();
 
                 log.info("[ImageGen] 요청 모델={}, 프롬프트={}", model, userMessage);
+                // Gemini API 호출
                 GenerateContentResponse response = client.models.generateContent(model, contents, config);
 
                 StringBuilder textBuilder = new StringBuilder();
@@ -355,6 +378,11 @@ public class ContentsService {
 
                 log.info("[ImageGen] 결과 - text길이={}, 이미지수={}", textBuilder.length(), images.size());
                 String textContent = textBuilder.toString();
+                GptChat gptChat = GptChat.builder()
+                                .GptChatContents(textContent)
+                                .build();
+
+                gptChatRepository.save(gptChat);
 
                 if (!images.isEmpty()) {
                         Map<String, Object> result = new LinkedHashMap<>();
@@ -390,6 +418,7 @@ public class ContentsService {
 
         /* 문서 저장 (RAG용) */
         public void saveDocument(String context) {
+                // 벡터 DB에 문서를 저장하는 메서드, RAG에서 검색할 수 있도록 텍스트를 벡터로 변환하여 저장합니다.
                 vectorStore.add(List.of(new Document(context)));
         }
 
@@ -418,6 +447,8 @@ public class ContentsService {
                 return chatClient.prompt()
                                 .system(systemPrompt)
                                 .user(dto.getMyChatContents())
+                                // GoogleGenAiChatOptions는 Spring AI에서 Google GenAI 모델을 사용할 때 옵션을 설정하는 클래스입니다.
+                                // 모델 선택, 온도, 최대 토큰 수 등 다양한 옵션을 설정할 수 있습니다.
                                 .options(GoogleGenAiChatOptions.builder()
                                                 .model(model)
                                                 .temperature(0.7)
@@ -431,33 +462,38 @@ public class ContentsService {
 
         // ------------------- 학술검색 + RAG 답변 -------------------
         public String sendWithRagAndScholar(MyChatDTO dto, String model, String customPrompt) {
-
+                // 1단계 - 벡터 DB에서 유사 문서 검색
                 List<Document> docs = vectorStore.similaritySearch(
                                 SearchRequest.builder()
                                                 .query(dto.getMyChatContents())
-                                                .topK(3)
+                                                .topK(3) // 유사한 문서 3개만
                                                 .build());
+                // 문서들을 하나의 문자열로 합치기
                 String ragContext = docs.stream()
+                                // 각 문서에서 텍스트만 추출
                                 .map(Document::getText)
+                                // 문서 사이에 구분선 삽입
                                 .collect(Collectors.joining("\n---\n"));
-
+                // 학술 검색 결과 가져오기
                 String scholarResults = scholarSearchService.search(dto.getMyChatContents());
+                // 시스템 프롬프트 조립
+                String systemPrompt =
+                                // ragContext 삽입 scholarResults 삽입 customPrompt 삽입
+                                """
+                                                아래 정보를 참고해서 답변하세요.
 
-                String systemPrompt = """
-                                아래 정보를 참고해서 답변하세요.
+                                                [RAG 검색 결과]
+                                                %s
 
-                                [RAG 검색 결과]
-                                %s
+                                                [학술 검색 결과]
+                                                %s
 
-                                [학술 검색 결과]
-                                %s
-
-                                [추가 지침]
-                                %s
-                                """.formatted(
-                                ragContext.isEmpty() ? "검색 결과 없음" : ragContext,
-                                scholarResults.isEmpty() ? "검색 결과 없음" : scholarResults,
-                                customPrompt != null ? customPrompt : "친절하고 학술적으로 답변하세요.");
+                                                [추가 지침]
+                                                %s
+                                                """.formatted(
+                                                ragContext.isEmpty() ? "검색 결과 없음" : ragContext,
+                                                scholarResults.isEmpty() ? "검색 결과 없음" : scholarResults,
+                                                customPrompt != null ? customPrompt : "친절하고 학술적으로 답변하세요.");
 
                 return chatClient.prompt()
                                 .system(systemPrompt)

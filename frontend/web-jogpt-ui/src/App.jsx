@@ -22,6 +22,14 @@ import './styles/toastMessage.css';
 
 
 export default function App() {
+    // 사용자 인증 관련
+    // user - 현재 로그인한 사용자 정보. null이면 비로그인 상태
+    // showLogin - 로그인 모달 / 팝업 표시 여부
+    // showLoginview -  로그인 전용 뷰 표시 여부, showLogin과 역할이 겹칠수 있음
+
+    //소셜 로그인 닉네임 설정 관련
+    // showNicknameSetup - 닉네임 설정 UI 표시 여부
+    // socialNickname - 소셜 로그인 후 받아온 닉네임 (닉네임 설정 UI에서 초기값으로 사용)
     const [user, setUser] = useState(null);
     const [showLogin, setShowLogin] = useState(false);
     const [toast, setToast] = useState('');

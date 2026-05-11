@@ -20,6 +20,7 @@ public class ScholarSearchService {
 
     private final RestTemplate restTemplate;
 
+    // 학술 검색 메서드
     public String search(String query) {
         try {
             // url관련
