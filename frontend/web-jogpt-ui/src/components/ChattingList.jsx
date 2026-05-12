@@ -124,4 +124,3 @@ export default function ChattingList({ onChatSelect, user }) {
         </div>
     );
 }
-

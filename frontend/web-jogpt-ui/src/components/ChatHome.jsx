@@ -34,6 +34,9 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
     const [isRecording, setIsRecording] = useState(false);
     const [attachedFiles, setAttachedFiles] = useState([]);
     const recognitionRef = useRef(null);
+    // 입력 기록 저장용 state 추가
+    const [inputHistory, setInputHistory] = useState([]);
+    const [historyIndex, setHistoryIndex] = useState(-1);
 
     useEffect(() => {
         const el = chatContainerRef.current;
@@ -47,6 +50,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
 
     useEffect(() => {
         if (!selectedChatKey) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoading(true);
         fetchWithRefresh(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/${selectedChatKey}/messages`, {
             credentials: 'include'
@@ -66,20 +70,45 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
             .finally(() => setLoading(false));
     }, [selectedChatKey]);
 
+    // handleKeyDowm 수정
+    const handleKeyDown = (e) => {
+        if(e.key === 'Enter' && !e.shiftKey){
+            e.preventDefault();
+            handleSend();
+        }
 
+        // 위 화살표 - 이전입력
+        if(e.key === 'ArrowUp'){
+            e.preventDefault();
+            if(inputHistory.length === 0){
+                return;
+            }
+            const newIndex = Math.min(historyIndex + 1, inputHistory.length - 1);
+            setHistoryIndex(newIndex);
+            setInput(inputHistory[newIndex]);
+        }
 
+        // 아래 화살표 - 다음 입력
+        if(e.key === 'ArrowDown'){
+            e.preventDefault();
+            if(historyIndex <= 0){
+                setHistoryIndex(-1);
+                setInput('');
+                return;
+            }
+            const newIndex = historyIndex - 1;
+            setHistoryIndex(newIndex);
+            setInput(inputHistory[newIndex]);
+        }
+    }
+    
     const handleInput = (e) => {
         setInput(e.target.value);
         e.target.style.height = 'auto';
         e.target.style.height = e.target.scrollHeight + 'px';
     };
 
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-        }
-    };
+
 
     const handleSend = async () => {
         const query = input.trim();
@@ -180,7 +209,10 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
                     fullContent = parsed.text;
                     images = parsed.images;
                 }
-            } catch (_) { }
+            } catch (Exception e2) {
+                return null;
+
+            }
 
             // 빈 메시지로 먼저 추가 후 타이핑 애니메이션 시작
             setMessages(prev => [...prev, { role: 'ai', content: '', images, streaming: true }]);
@@ -208,6 +240,7 @@ export default function ChatHome({ user, isActive, selectedChatKey, onChatLoaded
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: '"gpt 답변이 등록되었습니다."' })
             });
+            if (onNotification) onNotification(fullContent.replace(/[#*`>\-]/g, '').slice(0, 50), chatKey);
         }
     };
     // 이 코드의 장점 
