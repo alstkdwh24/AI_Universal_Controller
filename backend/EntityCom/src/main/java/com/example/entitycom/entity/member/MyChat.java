@@ -5,6 +5,7 @@ import com.example.entitycom.entity.chat.ShowChat;
 import com.example.entitycom.entity.gpt.GPT;
 import com.example.entitycom.entity.log.CreateTimeLogs;
 import io.hypersistence.utils.hibernate.id.Tsid;
+import com.example.entitycom.converter.AesEncryptConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,6 +23,7 @@ public class MyChat {
     @Tsid
     @Column(name = "my_chat_key", unique = true, nullable = false)
     private Long myChatKey;
+    @Convert(converter = AesEncryptConverter.class)
     @Lob
     @Column(nullable = true , name = "my_chat_contents", columnDefinition = "LONGTEXT")
     private String myChatContents;

@@ -33,6 +33,8 @@ repositories {
 }
 dependencies {
     // Vertex AI Search 클라이언트
+    implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
+
     implementation 'com.google.cloud:google-cloud-discoveryengine:0.41.0'
     implementation 'org.springframework.ai:spring-ai-starter-model-google-genai-embedding'
 
@@ -64,7 +66,9 @@ dependencies {
 
     // 5. 테스트 의존성 (표준화)
     testImplementation 'org.springframework.boot:spring-boot-starter-test'      // 통합 테스트 환경 (JUnit, Mockito 등 포함)
-    testImplementation 'org.springframework.security:spring-security-test'      // 보안 관련 로직 테스트 지원
+    testImplementation 'org.springframework.security:spring-security-test'
+    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'com.h2database:h2'// 보안 관련 로직 테스트 지원
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     /*실시간 알림*/
@@ -77,4 +81,7 @@ dependencies {
 }
 tasks.named('test') {
     useJUnitPlatform()
+}
+test {
+    jvmArgs '-Xmx2048m', '-Xms512m'
 }

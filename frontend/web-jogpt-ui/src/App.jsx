@@ -41,6 +41,17 @@ export default function App() {
     const [showNicknameSetup, setShowNicknameSetup] = useState(false);
     const [socialNickname, setSocialNickname] = useState('');
     const [pendingNicknameSetup, setPendingNicknameSetup] = useState(false);
+    const [notifications, setNotifications] = useState([]); // 알림 목록
+
+    // 알림 추가 함수
+    const handleNotification = (message, chatKey) => {
+        setNotifications(prev => [...prev, {
+            id: Date.now(),
+            message,
+            chatKey,
+            time: new Date()
+        }]);
+    };
 
     /* 모바일 → 화면 전환 / PC → 기존 모달 */
     const handleLoginClick = () => {
@@ -131,7 +142,7 @@ export default function App() {
                     />
                 );
             default:
-                return <ChatHome user={user} isActive={sidebarActive} selectedChatKey={selectedChatKey} onChatLoaded={() => setSelectedChatKey(null)} />;
+                return <ChatHome user={user} isActive={sidebarActive} selectedChatKey={selectedChatKey} onChatLoaded={() => setSelectedChatKey(null)} onChatSelect={(key) => { setSelectedChatKey(key); setCurrentView('home'); }} onNotification={handleNotification} />;
         }
     };
 
@@ -159,7 +170,7 @@ export default function App() {
 
             {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
             {showLoginView && <LoginView onClose={() => setShowLoginView(false)} />}
-            {showAlert && <AlertModal onClose={() => setShowAlert(false)} />}
+            {showAlert && <AlertModal onClose={() => setShowAlert(false)} notifications={notifications} onChatSelect={(key) => { setSelectedChatKey(key); setCurrentView('home'); setShowAlert(false); }} />}
             {showNicknameSetup && (
                 <NicknameSetupModal
                     socialNickname={socialNickname}

@@ -1,33 +1,24 @@
 package com.example.jo_gpt_program.gpt.restController;
 
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Set;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-
 import com.example.entitycom.dto.MessageDTO;
 import com.example.jo_gpt_program.gpt.config.filter.UserInfoDto;
 import com.example.jo_gpt_program.gpt.dto.ChatMessageDTO;
 import com.example.jo_gpt_program.gpt.dto.MyChatDTO;
 import com.example.jo_gpt_program.gpt.dto.ShowChatDTO;
-import com.example.jo_gpt_program.gpt.service.AlertService;
-import com.example.jo_gpt_program.gpt.service.ContentsService;
-
+import com.example.jo_gpt_program.gpt.service.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/contents")
@@ -36,41 +27,53 @@ public class ContentsController {
 
     private final String geminiKey;
 
-    private final ContentsService contentsService;
-    private final AlertService alertService;
+    private final ShowChatService showChatService;
+
+    private final MyAuthService myAuthService;
+
+    private final GeminiService geminiService;
+    private final RagService ragService;
+    private final ScholarSearchService scholarSearchService;
+    private final ChatMysqlService chatMysqlService;
 
     // static 메서드 사용 시, 생성자 사용 불가
-    public ContentsController(ContentsService contentsService, @Value("${spring.llm.key}") String geminiKey,
-            AlertService alertService) {
+    public ContentsController( @Value("${spring.llm.key}") String geminiKey,
+                              ShowChatService showChatService, MyAuthService myAuthService, GeminiService geminiService, RagService ragService, ScholarSearchService scholarSearchService, ChatMysqlService chatMysqlService) {
 
         this.geminiKey = geminiKey;
-        this.contentsService = contentsService;
+        this.showChatService = showChatService;
 
-        this.alertService = alertService;
+        this.myAuthService = myAuthService;
+        this.geminiService = geminiService;
+        this.ragService = ragService;
+        this.scholarSearchService = scholarSearchService;
+        this.chatMysqlService = chatMysqlService;
     }
 
     @PostMapping("/myContents")
-    public ResponseEntity<String> getMyContents(@RequestBody MyChatDTO dto) {
+    public ResponseEntity<String> getMyContents(@RequestBody MyChatDTO dto  ) {
         // SecurityContextHolder -> Spring Security가 인증 정보를 저장하는 전역 저장소
         // .getContext() -> 현재 요청의 보안 컨텍스트를 가져옴
         // .getAUthentication() -> 인증 객체 (JWT 검증 후 저장된 것)
         // .getPrincipal() -> 인증된 사용자 주체 (UserInfoDto로 캐스팅) 유저 정보를 꺼내는 것
-        UserInfoDto userInfo = (UserInfoDto) SecurityContextHolder
-                .getContext().getAuthentication().getPrincipal();
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (!(principal instanceof UserInfoDto userInfo)) {
+            return ResponseEntity.status(401).build();
+        }
         Long memberKey = Long.parseLong(userInfo.getMemberId());
 
-        String success = contentsService.userInfo(memberKey, dto);
+        String success = chatMysqlService.userInfo(memberKey, dto);
         return ResponseEntity.ok(success);
     }
 
     /* Gemini 호출 — Authorization으로 멤버 식별, DB의 활성 프롬프트 자동 적용 */
     @PostMapping("/gptContents")
     public ResponseEntity<String> getGptContents(@RequestBody MyChatDTO dto,
-            @RequestHeader(value = "X-Model", defaultValue = "gemini-3.1-flash-image-preview") String model,
-            @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {// 프론트에서 보내는 프롬프트
+                                                 @RequestHeader(value = "X-Model", defaultValue = "gemini-3.1-flash-image-preview") String model,
+                                                 @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {// 프론트에서 보내는 프롬프트
         String decoded = customPrompt != null ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8) : null;
         // 이게 null이 아니라면 디코딩해서 decoded에 저장, null이라면 decoded도 null
-        String response = contentsService.sendGeminiAI(dto, model, decoded);
+        String response = geminiService.sendGeminiAI(dto, model, decoded);
 
         return ResponseEntity.ok(response);
     }
@@ -78,7 +81,7 @@ public class ContentsController {
     // 채팅방 생성 API
     @PostMapping("/chatRoom")
     public ResponseEntity<Long> createChatRoom(@RequestBody MyChatDTO dto) {
-        Long showChatKey = contentsService.createChat(dto);
+        Long showChatKey = showChatService.createChat(dto);
         log.debug("createChatRoom showChatKey={}", showChatKey);
 
         return ResponseEntity.ok(showChatKey);
@@ -88,7 +91,7 @@ public class ContentsController {
     // 채팅방 목록 조회 API
     @GetMapping("/chattingList")
     public ResponseEntity<Set<ShowChatDTO>> getChattingList() {
-        Set<ShowChatDTO> showChatList = contentsService.getChattingList();
+        Set<ShowChatDTO> showChatList = chatMysqlService.getChattingList();
         log.debug("showChatListssss={}", showChatList);
         return ResponseEntity.ok(showChatList);
     }
@@ -98,7 +101,7 @@ public class ContentsController {
     public ResponseEntity<List<ChatMessageDTO>> getChatHistory(
             @PathVariable Long showChatKey) {
         // showChatKey를 기반으로 채팅방 대화 내역을 조회하는 메서드이다.
-        List<ChatMessageDTO> messages = contentsService.getChatMessages(showChatKey);
+        List<ChatMessageDTO> messages = showChatService.getChatMessages(showChatKey);
         return ResponseEntity.ok(messages);
     }
 
@@ -108,7 +111,7 @@ public class ContentsController {
             @RequestHeader("Authorization") String authHeader,
             @PathVariable Long showChatKey) {
         // 채팅방 삭제 메서드
-        contentsService.deleteChat(authHeader, showChatKey);
+        showChatService.deleteChat(authHeader, showChatKey);
         return ResponseEntity.ok().build();
     }
 
@@ -134,13 +137,13 @@ public class ContentsController {
     // 학술 검색 + AI 답변
     @PostMapping("/getScholarContents")
     public ResponseEntity<String> postMethodName(@RequestBody MyChatDTO dto,
-            @RequestHeader(value = "X-Model", defaultValue = "gemini-3.0-flash") String model,
+                                                 @RequestHeader(value = "X-Model", defaultValue = "gemini-3.0-flash") String model,
 
-            @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {
+                                                 @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {
         // 프론트에서 보내는 프롬프트가 있을수도 있고 없을 수도 있기 때문에 required = false로 저장
         String decoded = customPrompt != null ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8) : null;
         // 이게 null이 아니라면 디코딩해서 decoded에 저정, null이면 null
-        String response = contentsService.sendWithScholar(dto, model, decoded);
+        String response = scholarSearchService.sendWithScholar(dto, model, decoded);
         // AI 답변 추출 학술 답변
         // TODO: process POST request
 
@@ -157,7 +160,7 @@ public class ContentsController {
         // 프롬프트 적용
         String decoded = customPrompt != null ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8) : null;
         // RAD + 학술 검색 동시 적용
-        String response = contentsService.sendWithRagAndScholar(dto, model, decoded);
+        String response = scholarSearchService.sendWithRagAndScholar(dto, model, decoded);
         return ResponseEntity.ok(response);
 
     }
@@ -168,10 +171,19 @@ public class ContentsController {
     public ResponseEntity<Void> postMethodName(@RequestBody String entity) {
         // TODO: process POST request
         // 문서 저장 API
-        contentsService.saveDocument(entity);
+        ragService.saveDocument(entity);
         return ResponseEntity.ok().build();
     }
 
-    // RAG 답변 엔드포인
+    @PostMapping("/documents/search")
+    public ResponseEntity<String> findDocument(@RequestBody Map<String, String> body){
+        try {
+            String context = ragService.findDocument(body.get("query"));
+            return ResponseEntity.ok(context);
+        } catch (Exception e) {
+            log.warn("문서 검색 실패: {}", e.getMessage());
+            return ResponseEntity.ok("");
+        }
+    }
 
 }

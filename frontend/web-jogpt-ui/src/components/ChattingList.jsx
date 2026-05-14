@@ -9,7 +9,7 @@ export default function ChattingList({ onChatSelect, user }) {
     useEffect(() => {
         loadChattingList();
     }, []);
-
+    // 채팅 리스트 로딩
     const loadChattingList = async () => {
         if (user) {
             try {
@@ -34,7 +34,7 @@ export default function ChattingList({ onChatSelect, user }) {
         }
     };
 
-
+    // 시간 포맷
     const formatTime = (dateStr) => {
         const d = new Date(dateStr);
         const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -43,7 +43,7 @@ export default function ChattingList({ onChatSelect, user }) {
         const minutes = String(d.getMinutes()).padStart(2, '0');
         return `${month}/${day} ${hours}:${minutes}`;
     };
-
+    // 채팅 삭제 메서드
     const handleDelete = async (e, key) => {
         e.stopPropagation();
         if (!user) return;
@@ -58,7 +58,7 @@ export default function ChattingList({ onChatSelect, user }) {
             console.error('채팅 삭제 실패:', e);
         }
     };
-
+    // 채팅 검색 (아직 미완)
     const handleSearchInput = (e) => {
         setSearch(e.target.value);
         e.target.style.height = 'auto';

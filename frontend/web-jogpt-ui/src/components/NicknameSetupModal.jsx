@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import CONFIG from '../config/config';
-
+// 닉네임 관련 모달
 export default function NicknameSetupModal({ socialNickname, onComplete }) {
     const [mode, setMode] = useState(socialNickname ? 'choose' : 'input');
     const [nickname, setNickname] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-
+    // 나의 닉네임 저장
     const saveNickname = async (value) => {
         const trimmed = value.trim();
         if (!trimmed) { setError('닉네임을 입력해주세요.'); return; }
