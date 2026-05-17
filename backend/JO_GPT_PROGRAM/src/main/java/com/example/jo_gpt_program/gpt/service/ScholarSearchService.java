@@ -233,12 +233,9 @@ public class ScholarSearchService {
         try{
             ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST,request,String.class);
 
-            System.out.println("Tavily 검색 성공!");
             return response.getBody();
         }catch(Exception e){
-            System.out.println("=========================================");
-            System.out.println("Tavily 검색 실패: " + e.getMessage());
-            System.out.println("=========================================");
+
             return null;
         }
     }

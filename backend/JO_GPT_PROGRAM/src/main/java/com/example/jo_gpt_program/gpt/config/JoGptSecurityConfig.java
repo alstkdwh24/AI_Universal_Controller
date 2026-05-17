@@ -1,8 +1,6 @@
 package com.example.jo_gpt_program.gpt.config;
 
-import java.util.Arrays;
-import java.util.Collections;
-
+import com.example.jo_gpt_program.gpt.config.filter.JwtDelegateFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,7 +15,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-import com.example.jo_gpt_program.gpt.config.filter.JwtDelegateFilter;
+import java.util.Arrays;
+import java.util.Collections;
 
 // jo-gpt-program 자체 Security 설정
 @Configuration
@@ -55,7 +54,7 @@ public class JoGptSecurityConfig {
             // 모든 메서드 허용
             cors.setAllowedHeaders(Arrays.asList(
                     "Authorization", "Content-Type", "Cache-Control",
-                    "X-Requested-With", "X-Model", "X-Custom-Prompt"));
+                    "X-Requested-With", "X-Model", "X-Custom-Prompt", "X-NCP-APIGW-API-KEY-ID", "X-NCP-APIGW-API-KEY"));
             // 이 헤더들 허용
             cors.setAllowCredentials(true);
             // 쿠키 허용

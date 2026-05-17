@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify';
+import NaverMap from './NaverMap';
 import {marked} from 'marked';
 import {useEffect, useRef, useState} from 'react';
 import CONFIG from '../config/config';
@@ -358,7 +359,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
                 }
             }, TICK_MS);
             // 알림 처리
-            await fetchWithRefresh(`${CONFIG.API_CONTENTS_URL}/contents/notifications`, {
+            fetchWithRefresh(`${CONFIG.API_CONTENTS_URL}/contents/notifications`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: {'Content-Type': 'application/json'},
@@ -519,9 +520,22 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
                                     <div
                                         id="realGeminiContent"
                                         className={msg.streaming ? 'streaming-cursor' : ''}
-
-                                        dangerouslySetInnerHTML={{__html: DOMPurify.sanitize(marked.parse(msg.content))}}
+                                        dangerouslySetInnerHTML={{
+                                            __html: DOMPurify.sanitize(
+                                                marked.parse(msg.content.replace(/\[\[MAP:.*?\]\]/s, '').trim())
+                                            )
+                                        }}
                                     />
+                                )}
+                                {msg.content && msg.content.includes('[[MAP:') && !msg.streaming && (
+                                    <NaverMap coords={(() => {
+                                        try {
+                                            const raw = msg.content.split('[[MAP:')[1].split(']]')[0];
+                                            return JSON.parse(raw);
+                                        } catch {
+                                            return null;
+                                        }
+                                    })()} mapId={`map-${i}`} />
                                 )}
                                 {msg.images && msg.images.length > 0 && (
                                     <div className="gpt-image-wrap">
@@ -639,3 +653,4 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
         </div>
     );
 }
+

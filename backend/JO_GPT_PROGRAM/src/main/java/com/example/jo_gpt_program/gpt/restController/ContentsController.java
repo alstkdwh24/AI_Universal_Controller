@@ -82,7 +82,6 @@ public class ContentsController {
     @PostMapping("/chatRoom")
     public ResponseEntity<Long> createChatRoom(@RequestBody MyChatDTO dto) {
         Long showChatKey = showChatService.createChat(dto);
-        log.debug("createChatRoom showChatKey={}", showChatKey);
 
         return ResponseEntity.ok(showChatKey);
     }
@@ -92,7 +91,6 @@ public class ContentsController {
     @GetMapping("/chattingList")
     public ResponseEntity<Set<ShowChatDTO>> getChattingList() {
         Set<ShowChatDTO> showChatList = chatMysqlService.getChattingList();
-        log.debug("showChatListssss={}", showChatList);
         return ResponseEntity.ok(showChatList);
     }
 
@@ -120,7 +118,6 @@ public class ContentsController {
     // sse 란 서버 -> 클라이언트 방향으로 단방향 실시간 데이터 스트림을 전송하는 기숭입니다.
     public SseEmitter getNotifications(@RequestBody MessageDTO messageDTO) {
         String message = messageDTO.getMessage();
-        log.debug("messagesssss={}", message);
         SseEmitter emitter = new SseEmitter(60_000L); // 60초 타임아웃
         try {
             if (message != null) {
@@ -128,6 +125,8 @@ public class ContentsController {
                         .name("notification")
                         .data(message));
             }
+            emitter.complete(); // ← 추가!
+
         } catch (Exception e) {
             emitter.completeWithError(e);
         }
@@ -181,7 +180,6 @@ public class ContentsController {
             String context = ragService.findDocument(body.get("query"));
             return ResponseEntity.ok(context);
         } catch (Exception e) {
-            log.warn("문서 검색 실패: {}", e.getMessage());
             return ResponseEntity.ok("");
         }
     }

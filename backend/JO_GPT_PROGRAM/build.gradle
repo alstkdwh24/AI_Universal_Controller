@@ -33,14 +33,12 @@ repositories {
 }
 dependencies {
     // Vertex AI Search 클라이언트
-    implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
+//    implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
 
     implementation 'com.google.cloud:google-cloud-discoveryengine:0.41.0'
     implementation 'org.springframework.ai:spring-ai-starter-model-google-genai-embedding'
 
-    implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'  // Gemini 채팅 + 임베딩
-
-    // 1. Spring Boot Starters: 서비스 운영에 필요한 핵심 라이브러리들
+    implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'      // 데이터베이스 ORM(JPA) 지원
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'    // Redis 캐시 및 데이터 구조 지원
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client' // 구글, 카카오 등 소셜 로그인 기능
