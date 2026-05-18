@@ -106,7 +106,7 @@ public class ContentsController {
     /* 채팅방 삭제 */
     @DeleteMapping("/chatRoom/{showChatKey}")
     public ResponseEntity<Void> deleteChatRoom(
-            @RequestHeader("Authorization") String authHeader,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
             @PathVariable Long showChatKey) {
         // 채팅방 삭제 메서드
         showChatService.deleteChat(authHeader, showChatKey);

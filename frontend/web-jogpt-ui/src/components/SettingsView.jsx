@@ -186,7 +186,7 @@ export default function SettingsView({ onBack, user }) {
                     <div className="sv-section-title">정보</div>
                     <div className="sv-item">
                         <span className="sv-item-label">버전</span>
-                        <span className="sv-item-value">1.0.0</span>
+                        <span className="sv-item-value">1.0.1</span>
                     </div>
                 </div>
 

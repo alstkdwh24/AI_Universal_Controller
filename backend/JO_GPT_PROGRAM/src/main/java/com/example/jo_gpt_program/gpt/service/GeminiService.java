@@ -180,6 +180,9 @@ public class GeminiService {
             String role = (msg instanceof AssistantMessage) ? "model" : "user";
             contents.add(Content.builder().role(role).parts(Part.fromText(msg.getText())).build());
         }
+        // 현재 사용자 메시지(이미지 포함) 추가 - 없으면 'contents is not specified' 에러 발생!
+        contents.add(Content.builder().role("user").parts(parts).build());
+
 
 
         GenerateContentConfig config = GenerateContentConfig.builder()
