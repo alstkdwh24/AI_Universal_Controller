@@ -1,8 +1,8 @@
 package com.example.jo_gpt_program.gpt.config;
 
+import com.example.jo_gpt_program.gpt.config.redis.RedisChatMemoryRepository;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,16 +13,13 @@ import org.springframework.context.annotation.Primary;
 @Configuration
 public class AiConfig {
 
-    @Bean
-    public InMemoryChatMemoryRepository chatMemoryRepository() {
-        return new InMemoryChatMemoryRepository();
-    }
+
 
     @Bean
-    public ChatMemory chatMemory(InMemoryChatMemoryRepository repository) {
+    public ChatMemory chatMemory(RedisChatMemoryRepository repository) {
         return MessageWindowChatMemory.builder()
                 .chatMemoryRepository(repository)
-                .maxMessages(20)
+                .maxMessages(10)
                 .build();
     }
 

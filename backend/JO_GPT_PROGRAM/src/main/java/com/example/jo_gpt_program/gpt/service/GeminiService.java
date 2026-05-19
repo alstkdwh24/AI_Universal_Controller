@@ -94,6 +94,8 @@ public class GeminiService {
         String systemPrompt = getString(customPrompt, webResults);
         String conversationId = dto.getShowChatKey() != null ? dto.getShowChatKey().toString() : null;
         List<Message> history = conversationId != null ? chatMemory.get(conversationId) : List.of();
+        log.info("[DEBUG] conversationId={}, historySize={}", conversationId, history.size());
+        history.forEach(msg -> log.info("[DEBUG] history msg - type={}, text={}", msg.getMessageType(), msg.getText()));
 
         if (model.contains("image")) {
             return sendGeminiImageDirect(dto.getMyChatContents(), dto.getFiles(), model, systemPrompt,
@@ -248,5 +250,9 @@ public class GeminiService {
         return textContent;
     }
 }
+
+
+
+
 
 

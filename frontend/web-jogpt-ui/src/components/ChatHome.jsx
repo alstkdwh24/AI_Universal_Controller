@@ -10,7 +10,7 @@ const TICK_MS = 18;
 
 const MODEL_OPTIONS = [
     {label: 'Gemini 3 Flash Image', value: 'gemini-3.1-flash-image-preview'},
-    {label: 'GPT-4.5', value: 'gpt-4.5'},
+    {label: 'Gemini text/coding', value: 'gemini-3-flash-preview'},
 
 ];
 
@@ -139,18 +139,19 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
             handleSend();
         }
 
-        // 위 화살표 - 이전입력
+        // 위 화살표 - 이전입력 (커서가 맨 앞일 때만)
         if (e.key === 'ArrowUp') {
+            if (e.target.selectionStart !== 0) return;
             e.preventDefault();
-            console.log('[ArrowUp] history:', inputHistoryRef.current, 'index:', historyIndexRef.current);
             if (inputHistoryRef.current.length === 0) return;
             const newIndex = Math.min(historyIndexRef.current + 1, inputHistoryRef.current.length - 1);
             historyIndexRef.current = newIndex;
             setInput(inputHistoryRef.current[newIndex]);
         }
 
-        // 아래 화살표 - 다음 입력
+        // 아래 화살표 - 다음 입력 (커서가 맨 끝일 때만)
         if (e.key === "ArrowDown") {
+            if (e.target.selectionStart !== e.target.value.length) return;
             e.preventDefault();
             if (historyIndexRef.current <= -1) return;
             const newIndex = historyIndexRef.current - 1;

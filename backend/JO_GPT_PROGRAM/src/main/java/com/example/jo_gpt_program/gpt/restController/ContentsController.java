@@ -70,7 +70,7 @@ public class ContentsController {
     @PostMapping("/gptContents")
     public ResponseEntity<String> getGptContents(@RequestBody MyChatDTO dto,
                                                  @RequestHeader(value = "X-Model", defaultValue = "gemini-3.1-flash-image-preview") String model,
-                                                 @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {// 프론트에서 보내는 프롬프트
+                                                             @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {// 프론트에서 보내는 프롬프트
         String decoded = customPrompt != null ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8) : null;
         // 이게 null이 아니라면 디코딩해서 decoded에 저장, null이라면 decoded도 null
         String response = geminiService.sendGeminiAI(dto, model, decoded);

@@ -40,7 +40,7 @@ dependencies {
 
     implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'      // 데이터베이스 ORM(JPA) 지원
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'    // Redis 캐시 및 데이터 구조 지원
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client' // 구글, 카카오 등 소셜 로그인 기능
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'     // 서버사이드 템플릿 엔진 (HTML 렌더링)
     implementation 'org.springframework.boot:spring-boot-starter-web'           // 내장 톰캣 포함, 웹 MVC 핵심 기능 (webmvc 대체)
