@@ -1,8 +1,6 @@
 package com.example.entitycom.entity.member;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.example.entitycom.converter.AesEncryptConverter;
 import com.example.entitycom.entity.chat.ShowChat;
 import com.example.entitycom.entity.device.Devices;
 import com.example.entitycom.entity.gpt.GPT;
@@ -12,21 +10,15 @@ import com.example.entitycom.entity.token.MonthlyUsage;
 import com.example.entitycom.entity.token.PlanLimits;
 import com.example.entitycom.entity.token.UserTokens;
 import com.example.entitycom.enums.Role;
-
 import io.hypersistence.utils.hibernate.id.Tsid;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 //유저 아이디 엔터티
 @Entity
@@ -44,6 +36,7 @@ public class Members {
     @Column(name = "member_id", nullable = false)
     private String memberId;
 
+    @Convert(converter = AesEncryptConverter.class)
     @Column(name = "nickname", nullable = false)
     private String nickname;
 

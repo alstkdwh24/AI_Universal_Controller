@@ -1,4 +1,4 @@
-export default function TopBar({ user, isActive, onLoginClick, onLogout, isSettings, onSettingsBack }) {
+export default function TopBar({ user, isActive, onLoginClick, onSignupClick, onLogout, isSettings, onSettingsBack }) {
     return (
         <div className={isActive ? 'topBarActive' : 'topBar'}>
             <div className={isSettings ? 'topBar-left topBar-left--narrow' : 'topBar-left'}>
@@ -16,7 +16,7 @@ export default function TopBar({ user, isActive, onLoginClick, onLogout, isSetti
                 {!user ? (
                     <div id="authButtons" className="topBar-rightRight">
                         <button className="buttonWhite" onClick={onLoginClick}>로그인</button>
-                        <button className="buttonBlack" onClick={onLoginClick}>회원가입</button>
+                        <button className="buttonBlack" onClick={onSignupClick}>회원가입</button>
                     </div>
                 ) : (
                     <div id="userProfile" className="topBar-rightRight">

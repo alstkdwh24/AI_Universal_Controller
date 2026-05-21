@@ -14,6 +14,7 @@ import com.google.genai.types.Part;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
@@ -33,25 +34,16 @@ public class GeminiService {
     @Value("${spring.llm.key}")
     private String geminiApiKey;
     private final ChatClient chatClient;
+    private final ChatModel chatModel;
     private final ChatMemory chatMemory;
     private final ShowChatRepository showChatRepository;
     private final GptChatRepository gptChatRepository;
     private final ScholarSearchService scholarSearchService;
     private final NaverApiService naverApiService;
 
-    public GeminiService(ChatClient chatClient, ChatMemory chatMemory, ShowChatRepository showChatRepository, GptChatRepository gptChatRepository, ScholarSearchService scholarSearchService, NaverApiService naverApiService) {
-        this.chatClient = chatClient;
-        this.chatMemory = chatMemory;
-        this.showChatRepository = showChatRepository;
-        this.gptChatRepository = gptChatRepository;
-        this.scholarSearchService = scholarSearchService;
-        this.naverApiService = naverApiService;
-    }
-
-    // 장소 관련 키워드 감지
-    private boolean isMapRequest(String message) {
-        List<String> mapKeywords = List.of(
-            // 장소 유형
+    private final KakaoMapService kakaoMapService;
+    // ↓ 여기! 필드 선언부에 추가!
+    private static final List<String> MAP_KEYWORDS = List.of(
             "카페", "커피숍", "커피전문점", "맛집", "식당", "음식점", "레스토랑", "한식당",
             "고깃집", "분식", "분식집", "술집", "이자카야", "바", "펍", "포차",
             "빵집", "베이커리", "디저트", "아이스크림",
@@ -64,13 +56,75 @@ public class GeminiService {
             "놀이공원", "워터파크", "동물원", "식물원",
             "병원", "약국", "은행", "편의점",
             "영화관", "공연장", "극장",
-            // 위치 키워드
             "어디", "위치", "장소", "지도", "근처", "주변", "찾아줘", "알려줘"
-        );
-        return mapKeywords.stream().anyMatch(message::contains);
+    );
+
+    public GeminiService(ChatClient chatClient, ChatModel chatModel, ChatMemory chatMemory, ShowChatRepository showChatRepository, GptChatRepository gptChatRepository, ScholarSearchService scholarSearchService, NaverApiService naverApiService, KakaoMapService kakaoMapService) {
+        this.chatClient = chatClient;
+        this.chatModel = chatModel;
+        this.chatMemory = chatMemory;
+        this.showChatRepository = showChatRepository;
+        this.gptChatRepository = gptChatRepository;
+        this.scholarSearchService = scholarSearchService;
+        this.naverApiService = naverApiService;
+        this.kakaoMapService = kakaoMapService;
     }
 
+    private String extractLocationWithAI(String userMessage) {
+        String keywords = String.join(", ", MAP_KEYWORDS);
+        String prompt = """
+                다음 문장에서 지도 검색에 사용할 장소명을 추출하세요.
+                
+                장소 유형 키워드:
+                """ + keywords + """
+                
+                규칙:
+                1. 지역명 + 장소유형이면 → 둘 다 반환
+                   예) "홍대 카페 찾아줘"   → 홍대 카페
+                   예) "강남역 맛집 알려줘" → 강남역 맛집
+                
+                2. 장소명만 있으면 → 그대로 반환
+                   예) "스타벅스 찾아줘"    → 스타벅스
+                   예) "경복궁 알려줘"      → 경복궁
+                
+                3. 장소유형만 있으면 → CURRENT_LOCATION 반환
+                   예) "근처 카페 알려줘"   → CURRENT_LOCATION:카페
+                   예) "주변 맛집 찾아줘"   → CURRENT_LOCATION:맛집
+                   예) "편의점 어디야"      → CURRENT_LOCATION:편의점
+                
+                4. 장소 특정 불가능 → NONE 반환
+                   예) "오늘 날씨 어때"     → NONE
+                
+                추출한 결과만 반환하고 다른 말은 절대 하지 마세요.
+                
+                문장:
+                """ + userMessage;
 
+        try {
+            // 이미지 모델 컨텍스트와 독립된 새 클라이언트 생성
+            ChatClient independentClient = ChatClient.builder(chatModel).build();
+            String result = independentClient.prompt()
+                    .options(GoogleGenAiChatOptions.builder()
+                            .model("gemini-3.5-flash")
+                            .maxOutputTokens(200)
+                            .build())
+                    .user(prompt)
+                    .call()
+                    .content();
+            if (result == null) return "NONE";
+            // 따옴표, 콜론, 대괄호 등 특수문자 제거
+            String cleaned = result.trim().replaceAll("[\"':\\[\\]]", "").trim();
+            return cleaned.isEmpty() ? "NONE" : cleaned;
+        } catch (Exception e) {
+            log.error("[extractLocationWithAI] AI 추출 실패: {}", e.getMessage());
+            return "NONE";
+        }
+    }
+
+    // MAP_KEYWORDS 선언 아래, extractLocationWithAI() 위에 추가!
+    private boolean isMapRequest(String message) {
+        return MAP_KEYWORDS.stream().anyMatch(message::contains);
+    }
 
     public String sendGeminiAI(MyChatDTO dto, String model, String customPrompt) {
         UserMessage message;
@@ -124,17 +178,30 @@ public class GeminiService {
 
         // 장소 키워드 감지 → 지도 좌표 붙이기
         if (isMapRequest(dto.getMyChatContents())) {
-            String location = dto.getMyChatContents();
-            log.info("[search_map] 검색어={}", location);
-            String coords = naverApiService.findMap(location);
-            log.info("[search_map] 좌표 결과={}", coords);
-            response = response + "\n[[MAP:" + coords + "]]";
-        }
+            String location = extractLocationWithAI(dto.getMyChatContents()); // ① AI로 장소명 추출
+            log.info("[search_map] AI 추출 결과={}", location);
 
+            if (location.equals("NONE") || location.isBlank()) {
+                // 장소 특정 불가 → 지도 표시 안 함
+
+            } else if (location.startsWith("CURRENT_LOCATION:")) {
+                // ② 장소유형만 있는 경우 → 현재 위치 요청
+                String placeType = location.split(":")[1];
+                response = response + "\n[[MAP_START:CURRENT:" + placeType + ":MAP_END]]";
+
+            } else {
+                // ③ 일반 장소 검색
+                String coords = kakaoMapService.findMap(location);
+                log.info("[search_map] 좌표 결과={}", coords);
+                if (coords != null) { // ④ null 체크
+                    response = response + "\n[[MAP_START:" + coords + ":MAP_END]]";
+                }
+            }
+        }
         if (response != null && conversationId != null) {
             chatMemory.add(conversationId, message);
             // MAP 태그 제거 후 memory 저장 (히스토리에 [[MAP:...]] 남으면 다음 응답에 중복 생성됨)
-            String cleanResponse = response.replaceAll("\\[\\[MAP:.*?\\]\\]", "").trim();
+            String cleanResponse = response.replaceAll("\\[\\[MAP_START:.*?:MAP_END\\]\\]", "").trim();
             chatMemory.add(conversationId, new AssistantMessage(cleanResponse));
             GptChat gptChat = GptChat.builder()
                     .GptChatContents(response)
@@ -186,7 +253,6 @@ public class GeminiService {
         contents.add(Content.builder().role("user").parts(parts).build());
 
 
-
         GenerateContentConfig config = GenerateContentConfig.builder()
                 .systemInstruction(systemInstruction)
                 .responseModalities("TEXT", "IMAGE")
@@ -215,20 +281,32 @@ public class GeminiService {
         String textContent = textBuilder.toString();
         log.info("[ImageGen] 결과 - text길이={}, 이미지수={}", textContent.length(), images.size());
 
-        // 장소 키워드 감지 → 지도 좌표 붙이기
+        // // 장소 키워드 감지 → 지도 좌표 붙이기
         if (isMapRequest(userMessage)) {
-            String location = userMessage;
-            log.info("[search_map] 검색어={}", location);
-            String coords = naverApiService.findMap(location);
-            log.info("[search_map] 좌표 결과={}", coords);
-            textContent = textContent + "\n[[MAP:" + coords + "]]";
-        }
+            String location = extractLocationWithAI(userMessage);  // ① AI 추출
+            log.info("[search_map] AI 추출 결과={}", location);
 
+            if (location.equals("NONE") || location.isBlank()) {
+                // 장소 특정 불가 → 지도 표시 안 함
+
+            } else if (location.startsWith("CURRENT_LOCATION:")) {
+                String placeType = location.split(":")[1];
+                textContent = textContent + "\n[[MAP_START:CURRENT:" + placeType + ":MAP_END]]";
+
+            } else {
+                String coords = kakaoMapService.findMap(location);
+                log.info("[search_map] 좌표 결과={}", coords);
+                if (coords != null) {
+                    textContent = textContent + "\n[[MAP_START:" + coords + ":MAP_END]]";
+                }
+            }
+        } // ← if 블록 여기서 닫기!
+
+        // 항상 실행 - 지도 요청 여부 관계없이 저장/반환
         ShowChat showChat = showChatKey != null ? showChatRepository.findShowChatByShowChatKey(showChatKey).orElse(null) : null;
         log.info("[Memory] conversationId={}, historySize={}", conversationId, history.size());
         chatMemory.add(conversationId, UserMessage.builder().text(userMessage).build());
-        // MAP 태그 제거 후 memory 저장 (히스토리에 [[MAP:...]] 남으면 다음 응답에 중복 생성됨)
-        String cleanTextContent = textContent.replaceAll("\\[\\[MAP:.*?\\]\\]", "").trim();
+        String cleanTextContent = textContent.replaceAll("\\[\\[MAP_START:.*?:MAP_END\\]\\]", "").trim();
         chatMemory.add(conversationId, new AssistantMessage(cleanTextContent));
         GptChat gptChat = GptChat.builder()
                 .GptChatContents(textContent)
@@ -250,6 +328,15 @@ public class GeminiService {
         return textContent;
     }
 }
+
+
+
+
+
+
+
+
+
 
 
 

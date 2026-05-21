@@ -21,6 +21,8 @@
     border-radius: 20px;
     background-color: white;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
 }
 
 /*모달 회원가입 또는 로그인 탑부분*/
@@ -227,5 +229,91 @@
     .nickname-modal {
         width: 88%;
         padding: 32px 24px;
+    }
+}
+
+/* ===== 회원가입 모달 (input 전용) ===== */
+.modelJoin--signup {
+    width: 400px;
+    min-width: unset;
+    min-height: unset;
+    height: auto;
+    padding: 40px 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.modelJoin--signup .modelJoinTitle {
+    height: auto;
+    gap: 8px;
+}
+
+.modelJoin--signup .modelJoinTitleH2 {
+    font-size: 28px;
+}
+
+.modelJoin--signup .modelJoinTitleP {
+    font-size: 14px;
+    color: #666;
+}
+
+.signup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .modelJoin--signup {
+        width: 100%;
+        height: auto;
+        border-radius: 20px 20px 0 0;
+        padding: 32px 24px;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+/* ===== JO-GPT 로그인 / 회원가입 전환 모달 ===== */
+.modelJoin--jogpt {
+    width: 400px;
+    min-width: unset;
+    min-height: unset;
+    height: auto;
+    padding: 44px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.modelJoin--jogpt .modelJoinTitle {
+    height: auto;
+    gap: 10px;
+}
+
+.modelJoin--jogpt .modelJoinTitleH2 {
+    font-size: 32px;
+}
+
+.modelJoin--jogpt .modelJoinTitleP {
+    font-size: 15px;
+    color: #666;
+}
+
+.modelJoin--jogpt .signup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+}
+
+
+@media (max-width: 768px) {
+    .modelJoin--jogpt {
+        width: 100%;
+        height: auto;
+        border-radius: 20px 20px 0 0;
+        padding: 36px 28px;
+        padding-bottom: env(safe-area-inset-bottom);
     }
 }

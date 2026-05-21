@@ -3,7 +3,7 @@ import CONFIG from '../config/config';
 // 닉네임 관련 모달
 export default function NicknameSetupModal({ socialNickname, onComplete }) {
     // const [변수명, 변수를 바꾸는 함수] = useState(초기값)
-    const [mode, setMode] = useState(socialNickname ? 'choose' : 'inupt');
+    const [mode, setMode] = useState(socialNickname ? 'choose' : 'input');
     // 닉네임을
     const [nickname, setNickname] = useState('');
     // 로딩
@@ -86,7 +86,7 @@ export default function NicknameSetupModal({ socialNickname, onComplete }) {
                             autoFocus
                         />
                         {error && <p className="nickname-error">{error}</p>}
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{ display: 'flex', gap: '8px', width: '30%' }}>
                             {socialNickname && (
                                 <button
                                     className="nickname-btn"

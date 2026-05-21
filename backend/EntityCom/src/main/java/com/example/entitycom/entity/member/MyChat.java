@@ -23,7 +23,7 @@ public class MyChat {
     @Tsid
     @Column(name = "my_chat_key", unique = true, nullable = false)
     private Long myChatKey;
-    @Convert(converter = AesEncryptConverter.class)
+    @Convert(converter = AesEncryptConverter.class) // 2차 암호화를 시켜주는 어노테이션
     @Lob
     @Column(nullable = true , name = "my_chat_contents", columnDefinition = "LONGTEXT")
     private String myChatContents;

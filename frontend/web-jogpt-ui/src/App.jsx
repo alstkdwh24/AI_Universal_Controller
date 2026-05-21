@@ -5,6 +5,7 @@ import ChattingList from './components/ChattingList';
 import LoginModal from './components/LoginModal';
 import LoginView from './components/LoginView';
 import NicknameSetupModal from './components/NicknameSetupModal';
+import SignupModal from './components/SignupModal';
 import SettingsView from './components/SettingsView';
 import SideBar from './components/SideBar';
 import TopBar from './components/TopBar';
@@ -42,6 +43,7 @@ export default function App() {
     const [socialNickname, setSocialNickname] = useState('');
     const [pendingNicknameSetup, setPendingNicknameSetup] = useState(false);
     const [notifications, setNotifications] = useState([]); // 알림 목록
+    const [showSignup, setShowSignup] = useState(false);
 
     // 알림 추가 함수
     const handleNotification = (message, chatKey) => {
@@ -161,6 +163,7 @@ export default function App() {
                     user={user}
                     isActive={sidebarActive}
                     onLoginClick={handleLoginClick}
+                    onSignupClick={() => setShowSignup(true)}
                     onLogout={handleLogout}
                     isSettings={currentView === 'settings'}
                     onSettingsBack={() => setCurrentView('home')}
@@ -168,7 +171,8 @@ export default function App() {
                 {renderContent()}
             </div>
 
-            {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+            {showLogin && <LoginModal onClose={() => setShowLogin(false)} onLoginComplete={(msg) => { setShowLogin(false); fetchMyInfo(); showToastMessage(msg); }} />}
+            {showSignup && <SignupModal onClose={() => setShowSignup(false)} onSignupComplete={(msg) => { setShowSignup(false); showToastMessage(msg); }} />}
             {showLoginView && <LoginView onClose={() => setShowLoginView(false)} />}
             {showAlert && <AlertModal onClose={() => setShowAlert(false)} notifications={notifications} onChatSelect={(key) => { setSelectedChatKey(key); setCurrentView('home'); setShowAlert(false); }} />}
             {showNicknameSetup && (

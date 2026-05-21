@@ -1,5 +1,5 @@
 import DOMPurify from 'dompurify';
-import NaverMap from './NaverMap';
+import KakaoMap from './KakaoMap';
 import {marked} from 'marked';
 import {useEffect, useRef, useState} from 'react';
 import CONFIG from '../config/config';
@@ -523,16 +523,17 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
                                         className={msg.streaming ? 'streaming-cursor' : ''}
                                         dangerouslySetInnerHTML={{
                                             __html: DOMPurify.sanitize(
-                                                marked.parse(msg.content.replace(/\[\[MAP:.*?\]\]/s, '').trim())
+                                                marked.parse(msg.content.replace(/\[\[MAP_START:[\s\S]*?:MAP_END\]\]/g, '').trim())
                                             )
                                         }}
                                     />
                                 )}
-                                {msg.content && msg.content.includes('[[MAP:') && !msg.streaming && (
-                                    <NaverMap coords={(() => {
+                                {msg.content && msg.content.includes('[[MAP_START:') && !msg.streaming && (
+                                    <KakaoMap places={(() => {
                                         try {
-                                            const raw = msg.content.split('[[MAP:')[1].split(']]')[0];
-                                            return JSON.parse(raw);
+                                            const raw = msg.content.split('[[MAP_START:')[1].split(':MAP_END]]')[0];
+                                            const parsed = JSON.parse(raw);
+                                            return Array.isArray(parsed) ? parsed : [parsed];
                                         } catch {
                                             return null;
                                         }
@@ -654,4 +655,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
         </div>
     );
 }
+
+
+
 
