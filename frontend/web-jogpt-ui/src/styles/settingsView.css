@@ -431,3 +431,48 @@
         padding-bottom: env(safe-area-inset-bottom);
     }
 }
+/* ===== 업데이트 내역 ===== */
+.sv-update-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.sv-update-item {
+    padding: 0.9rem 1rem;
+    border: 1px solid #E0EAFF;
+    border-radius: 12px;
+    background: white;
+}
+
+.sv-update-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6rem;
+}
+
+.sv-update-version {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #3A6BF5;
+}
+
+.sv-update-date {
+    font-size: 0.8rem;
+    color: #aaa;
+}
+
+.sv-update-changes {
+    margin: 0;
+    padding-left: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.sv-update-changes li {
+    font-size: 0.88rem;
+    color: #555;
+    line-height: 1.5;
+}

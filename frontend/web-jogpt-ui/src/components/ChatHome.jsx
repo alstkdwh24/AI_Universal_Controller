@@ -1,4 +1,4 @@
-import DOMPurify from 'dompurify';
+﻿import DOMPurify from 'dompurify';
 import KakaoMap from './KakaoMap';
 import {marked} from 'marked';
 import {useEffect, useRef, useState} from 'react';
@@ -9,8 +9,10 @@ const CHUNK_SIZE = 4;
 const TICK_MS = 18;
 
 const MODEL_OPTIONS = [
-    {label: 'Gemini 3 Flash Image', value: 'gemini-3.1-flash-image-preview'},
-    {label: 'Gemini text/coding', value: 'gemini-3-flash-preview'},
+    {label: 'Gemini 이미지 버전', value: 'gemini-3.1-flash-image-preview'},
+    {label: 'Gemini 3 버전', value: 'gemini-3-flash-preview'},
+
+
 
 ];
 
@@ -44,6 +46,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
         }
         return stored;
     });
+    const showChatRef = useRef(showChat); // ✅ showChat 즉시 참조용 ref
 
     // 리벤더는 React가 화면을 다시 그리는 것입니다.
     // useRef가 필요한 이유
@@ -126,6 +129,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
                 setMessages(data.map(m => ({role: m.role, content: m.content, images: []})));
                 localStorage.setItem('showChat', selectedChatKey);
                 setShowChat(String(selectedChatKey));
+                showChatRef.current = String(selectedChatKey); // ✅ ref 즉시 업데이트
                 if (onChatLoaded) onChatLoaded();
             })
             .catch(e => console.error('대화 내역 로드 실패:', e))
@@ -200,10 +204,10 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
         if (textareaRef.current) textareaRef.current.style.height = 'auto';
 
         try {
-            if (!showChat) {
+            if (!showChatRef.current) { // ✅ ref로 즉시 체크
                 await firstSend(myContent);
             } else {
-                await continueSend(myContent, showChat);
+                await continueSend(myContent, showChatRef.current); // ✅ ref 값 사용
 
             }
         } catch (e) {
@@ -216,18 +220,30 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
 
 
     const firstSend = async (myContent) => {
-        const res = await fetchWithRefresh(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom`, {
+        // ✅ 채팅방 생성 + AI 응답 한번에 처리 (API 1번만 호출)
+        const base = localStorage.getItem('CUSTOM_PROMPT')?.trim() || '';
+        const context = await checkDocument(myContent);
+        const customPrompt = [base, context].filter(Boolean).join('\n');
+
+        const res = await fetchWithRefresh(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/first`, {
             method: 'POST',
             credentials: 'include',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({myChatContents: myContent})
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Model': selectedModel,
+                ...(customPrompt && {'X-Custom-Prompt': encodeURIComponent(customPrompt)}),
+            },
+            body: JSON.stringify({myChatContents: myContent, files: attachedFiles})
         });
         if (!res.ok) throw new Error(`채팅방 생성 실패: ${res.status}`);
-        const key = await res.text();
-        localStorage.setItem('showChat', key);
-        setShowChat(key);
 
-        await fetchGptResponse(myContent, selectedModel, key);
+        const data = await res.json(); // { chatKey, response } 한번에!
+        localStorage.setItem('showChat', String(data.chatKey));
+        setShowChat(String(data.chatKey));
+        showChatRef.current = String(data.chatKey); // ✅ ref 즉시 업데이트
+
+        // ✅ 받은 AI 응답 바로 스트리밍 표시
+        await handleGptResponseText(data.response, data.chatKey);
     };
 
 
@@ -368,6 +384,32 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
             });
             if (onNotification) onNotification(fullContent.replace(/[#*`>\-]/g, '').slice(0, 50), chatKey);
         }
+    };
+
+    // ✅ AI 응답 텍스트를 스트리밍 표시하는 공통 함수
+    const handleGptResponseText = async (gptText, chatKey) => {
+        if (!gptText) return;
+        let fullContent = gptText;
+        let images = [];
+        try {
+            const parsed = JSON.parse(gptText);
+            if (parsed.text !== undefined && parsed.images !== undefined) {
+                fullContent = parsed.text;
+                images = parsed.images;
+            }
+        } catch (_e) {}
+        setAttachedFiles([]);
+        setMessages(prev => [...prev, {role: 'ai', content: '', images, streaming: true}]);
+        let i = 0;
+        clearInterval(streamIntervalRef.current);
+        streamIntervalRef.current = setInterval(() => {
+            i = Math.min(i + CHUNK_SIZE, fullContent.length);
+            const chunk = fullContent.slice(0, i);
+            const done = i >= fullContent.length;
+            setMessages(prev => { const next = [...prev]; next[next.length - 1] = {...next[next.length - 1], content: chunk, streaming: !done}; return next; });
+            if (done) { clearInterval(streamIntervalRef.current); }
+        }, TICK_MS);
+        if (onNotification) onNotification(fullContent.slice(0, 50), chatKey);
     };
 
 // 이 코드의 장점
@@ -655,6 +697,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
         </div>
     );
 }
+
 
 
 

@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface GptChatRepository extends JpaRepository<GptChat, Long> {
     List<GptChat> findByShowChat(ShowChat showChat);
+
+    List<GptChat> findByGptChatContents(String message);
 }

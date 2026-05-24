@@ -59,10 +59,24 @@ export default function ChattingList({ onChatSelect, user }) {
         }
     };
     // 채팅 검색 (아직 미완)
-    const handleSearchInput = (e) => {
+    const  handleSearchInput = (e) => {
         setSearch(e.target.value);
         e.target.style.height = 'auto';
         e.target.style.height = e.target.scrollHeight + 'px';
+        const res= fetch(`${CONFIG.API_CONTENTS_URL}/contents/searchChatting`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                search: e.target.value
+            })
+        });
+         if(res !== null){
+             res.then(res => res.json())
+
+         }
     };
 
 

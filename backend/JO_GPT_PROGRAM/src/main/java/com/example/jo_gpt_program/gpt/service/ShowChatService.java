@@ -1,17 +1,16 @@
 package com.example.jo_gpt_program.gpt.service;
 
+import com.example.entitycom.dto.MessageDTO;
 import com.example.entitycom.entity.chat.ShowChat;
+import com.example.entitycom.entity.gpt.GptChat;
 import com.example.entitycom.entity.log.CreateTimeLogs;
 import com.example.entitycom.entity.member.Members;
 import com.example.entitycom.entity.member.MyChat;
+import com.example.jo_gpt_program.gpt.config.filter.UserInfoDto;
 import com.example.jo_gpt_program.gpt.dto.ChatMessageDTO;
 import com.example.jo_gpt_program.gpt.dto.MyChatDTO;
 import com.example.jo_gpt_program.gpt.dto.ShowChatDTO;
-import com.example.jo_gpt_program.gpt.config.filter.UserInfoDto;
-import com.example.jo_gpt_program.gpt.repository.jpa.CreateTimeRepository;
-import com.example.jo_gpt_program.gpt.repository.jpa.MemberRepository;
-import com.example.jo_gpt_program.gpt.repository.jpa.MyChatRepository;
-import com.example.jo_gpt_program.gpt.repository.jpa.ShowChatRepository;
+import com.example.jo_gpt_program.gpt.repository.jpa.*;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,11 +28,14 @@ public class ShowChatService {
     private final MyChatRepository myChatRepository;
     private final CreateTimeRepository createTimeRepository;
 
-    public ShowChatService(ShowChatRepository showChatRepository, MemberRepository memberRepository, MyChatRepository myChatRepository, CreateTimeRepository createTimeRepository) {
+    private final GptChatRepository gptChatRepository;
+
+    public ShowChatService(ShowChatRepository showChatRepository, MemberRepository memberRepository, MyChatRepository myChatRepository, CreateTimeRepository createTimeRepository, GptChatRepository gptChatRepository) {
         this.showChatRepository = showChatRepository;
         this.memberRepository = memberRepository;
         this.myChatRepository = myChatRepository;
         this.createTimeRepository = createTimeRepository;
+        this.gptChatRepository = gptChatRepository;
     }
 
     private Members getMemberFromContext() {
@@ -73,10 +75,11 @@ public class ShowChatService {
     }
 
 
-    // 채팅방 번호 찾기
+    // 채팅방 번호 찾기 - 없으면 null 반환 (예외 대신)
     public ShowChat findShowNumber(Long showChatKey) {
-        Optional<ShowChat> showChatNumber=showChatRepository.findShowChatByShowChatKey(showChatKey);
-        return showChatNumber.orElseThrow( () -> new RuntimeException("ShowChat not found: " + showChatKey));
+        if (showChatKey == null) return null;
+        Optional<ShowChat> showChatNumber = showChatRepository.findShowChatByShowChatKey(showChatKey);
+        return showChatNumber.orElse(null);
     }
 
     public Set<ShowChatDTO> findShowChatNumber(Members members) {
@@ -142,5 +145,10 @@ public class ShowChatService {
                 .map(e -> new ChatMessageDTO((String) e[1], (String) e[2]))
                 .collect(Collectors.toList());
     }
-}
 
+    public List<GptChat> findShowRoom(MessageDTO dto) {
+        List<GptChat> gptChat =gptChatRepository.findByGptChatContents(dto.getMessage());
+
+        return gptChat;
+    }
+}

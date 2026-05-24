@@ -31,19 +31,19 @@ public class KakaoMapService {
 
     public String findMap(String query) {
         log.info("[KakaoAPI] 검색어={}", query);
-
+        // 헤더에 카카오 api 첨가
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "KakaoAK " + kakaoApiKey);
 
         URI uri = UriComponentsBuilder
-                .fromHttpUrl("https://dapi.kakao.com/v2/local/search/keyword.json")
+                .fromHttpUrl("https://dapi.kakao.com/v2/local/search/keyword.json") // 카카오맵 uri
                 .queryParam("query", query)
                 .queryParam("size", 5)  // ← 최대 5개 결과
                 .build()
                 .encode()
                 .toUri();
         log.info("[KakaoAPI] 요청 URI={}", uri);
-
+        // 카카오맵에 요청 보내기
         ResponseEntity<String> response = this.restTemplate.exchange(
                 uri,
                 HttpMethod.GET,
@@ -53,8 +53,10 @@ public class KakaoMapService {
         log.info("[KakaoAPI] 응답={}", response.getBody());
 
         try {
+            // ObjectMapper 로 데이터 담고
             ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(response.getBody());
+
+            JsonNode root = mapper.readTree(response.getBody());  // HTTP 응답의 body (JSON 문자열) JSON 문자열 -> JsonNode 트리 구조로 변환
             JsonNode documents = root.path("documents");
 
             if (documents.isArray() && documents.size() > 0) {

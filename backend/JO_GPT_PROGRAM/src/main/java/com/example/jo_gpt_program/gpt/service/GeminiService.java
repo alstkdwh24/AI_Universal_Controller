@@ -14,11 +14,11 @@ import com.google.genai.types.Part;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.content.Media;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +26,8 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Slf4j
@@ -39,10 +41,9 @@ public class GeminiService {
     private final ShowChatRepository showChatRepository;
     private final GptChatRepository gptChatRepository;
     private final ScholarSearchService scholarSearchService;
-    private final NaverApiService naverApiService;
 
     private final KakaoMapService kakaoMapService;
-    // ↓ 여기! 필드 선언부에 추가!
+    // ↓ 여기! 필드 선언부에 추가! 키워드
     private static final List<String> MAP_KEYWORDS = List.of(
             "카페", "커피숍", "커피전문점", "맛집", "식당", "음식점", "레스토랑", "한식당",
             "고깃집", "분식", "분식집", "술집", "이자카야", "바", "펍", "포차",
@@ -59,18 +60,18 @@ public class GeminiService {
             "어디", "위치", "장소", "지도", "근처", "주변", "찾아줘", "알려줘"
     );
 
-    public GeminiService(ChatClient chatClient, ChatModel chatModel, ChatMemory chatMemory, ShowChatRepository showChatRepository, GptChatRepository gptChatRepository, ScholarSearchService scholarSearchService, NaverApiService naverApiService, KakaoMapService kakaoMapService) {
+    public GeminiService(ChatClient chatClient, ChatModel chatModel, ChatMemory chatMemory, ShowChatRepository showChatRepository, GptChatRepository gptChatRepository, ScholarSearchService scholarSearchService, KakaoMapService kakaoMapService) {
         this.chatClient = chatClient;
         this.chatModel = chatModel;
         this.chatMemory = chatMemory;
         this.showChatRepository = showChatRepository;
         this.gptChatRepository = gptChatRepository;
         this.scholarSearchService = scholarSearchService;
-        this.naverApiService = naverApiService;
         this.kakaoMapService = kakaoMapService;
     }
 
     private String extractLocationWithAI(String userMessage) {
+        // 지도관련 프롬프트 명령어 작성
         String keywords = String.join(", ", MAP_KEYWORDS);
         String prompt = """
                 다음 문장에서 지도 검색에 사용할 장소명을 추출하세요.
@@ -94,6 +95,28 @@ public class GeminiService {
                 
                 4. 장소 특정 불가능 → NONE 반환
                    예) "오늘 날씨 어때"     → NONE
+                5. 직접 장소를 언급하진 않았지만
+                   문맥상 장소와 관련된 키워드가 있으면
+                   → CURRENT_LOCATION:추출한 장소유형
+                
+                   예) "치킨 먹으러 갈 만한 곳"  → CURRENT_LOCATION:치킨집
+                   예) "데이트 코스 추천해줘"     → CURRENT_LOCATION:데이트코스
+                   예) "주말에 어디 가면 좋을까"  → CURRENT_LOCATION:관광지
+                        6. 조사/어미 제거 규칙:
+                           장소명 뒤에 붙는 아래 조사/어미는 반드시 제거하고 순수 장소명만 반환하세요.
+                           제거 대상: 에, 에서, 에서는, 에서도, 의, 에는, 에도,
+                                      로, 으로, 로는, 으로는, 로부터, 으로부터,
+                                      쪽, 쪽으로, 방면, 방향,
+                                      이랑, 랑, 와, 과, 보다, 처럼, 같은
+                
+                           행정구역 단위는 유지하세요 (시, 구, 동, 읍, 면, 군):
+                           예) "시흥시에 맛집"    → 시흥시 맛집  (시흥시는 유지!)
+                           예) "강남구에서 카페"  → 강남구 카페
+                           예) "홍대에서 맛집"    → 홍대 맛집
+                           예) "제주도의 카페"    → 제주도 카페
+                           예) "부산으로 여행"    → CURRENT_LOCATION:관광지  (장소유형 불명확)
+                           예) "신촌 쪽 맛집"    → 신촌 맛집
+                           예) "인천 방면 카페"   → 인천 카페
                 
                 추출한 결과만 반환하고 다른 말은 절대 하지 마세요.
                 
@@ -122,6 +145,7 @@ public class GeminiService {
     }
 
     // MAP_KEYWORDS 선언 아래, extractLocationWithAI() 위에 추가!
+    // 메시지에 MAP_KEYWORDS 키가 포함되어 있는지
     private boolean isMapRequest(String message) {
         return MAP_KEYWORDS.stream().anyMatch(message::contains);
     }
@@ -162,7 +186,7 @@ public class GeminiService {
         GoogleGenAiChatOptions options = GoogleGenAiChatOptions.builder()
                 .model(model)
                 .temperature(0.7)
-                .maxOutputTokens(1024)
+                .maxOutputTokens(6024)
                 .topP(0.9)
                 .topK(100)
                 .build();
@@ -204,7 +228,7 @@ public class GeminiService {
             String cleanResponse = response.replaceAll("\\[\\[MAP_START:.*?:MAP_END\\]\\]", "").trim();
             chatMemory.add(conversationId, new AssistantMessage(cleanResponse));
             GptChat gptChat = GptChat.builder()
-                    .GptChatContents(response)
+                    .gptChatContents(response)
                     .showChat(showChatRepository.findById(dto.getShowChatKey()).orElse(null))
                     .build();
             gptChatRepository.save(gptChat);
@@ -216,13 +240,24 @@ public class GeminiService {
     }
 
     private static @NonNull String getString(String customPrompt, String webResults) {
+
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
         String basePrompt = customPrompt != null && !customPrompt.isBlank() ? customPrompt
                 : """
                 당신은 JO-GPT 어시스턴트입니다.
                 항상 한국어로 친절하게 답변하세요.
                 이전 대화 내역을 기억하고 대화 맥락을 유지하며 답변하세요.
                 """;
-        return webResults.isBlank() ? basePrompt : basePrompt + "\n\n[웹 검색 결과]\n" + webResults;
+
+        String datePrompt = """
+                [현재 날짜]
+                오늘은 %s 입니다.
+                최신 정보가 필요한 질문은 반드시 아래 웹 검색 결과를 우선으로 답변하세요.
+                웹 검색 결과가 없으면 학습 데이터 기준으로 답변하되,
+                "정확한 최신 정보는 직접 확인이 필요합니다."라고 꼭 덧붙이세요.
+                """.formatted(today);
+        return webResults.isBlank() ? basePrompt + datePrompt : basePrompt + datePrompt + "\n\n[웹 검색 결과]\n" + webResults;
     }
 
     private String sendGeminiImageDirect(String userMessage, List<MyChatDTO.FilePartDTO> files, String model,
@@ -259,7 +294,6 @@ public class GeminiService {
                 .maxOutputTokens(2048)
                 .build();
 
-        log.info("[ImageGen] 요청 모델={}, 프롬프트={}", model, userMessage);
         GenerateContentResponse response = client.models.generateContent(model, contents, config);
 
         StringBuilder textBuilder = new StringBuilder();
@@ -282,7 +316,7 @@ public class GeminiService {
         log.info("[ImageGen] 결과 - text길이={}, 이미지수={}", textContent.length(), images.size());
 
         // // 장소 키워드 감지 → 지도 좌표 붙이기
-        if (isMapRequest(userMessage)) {
+        if (isMapRequest(userMessage) ) {
             String location = extractLocationWithAI(userMessage);  // ① AI 추출
             log.info("[search_map] AI 추출 결과={}", location);
 
@@ -309,7 +343,7 @@ public class GeminiService {
         String cleanTextContent = textContent.replaceAll("\\[\\[MAP_START:.*?:MAP_END\\]\\]", "").trim();
         chatMemory.add(conversationId, new AssistantMessage(cleanTextContent));
         GptChat gptChat = GptChat.builder()
-                .GptChatContents(textContent)
+                .gptChatContents(textContent)
                 .showChat(showChat)
                 .build();
         gptChatRepository.save(gptChat);

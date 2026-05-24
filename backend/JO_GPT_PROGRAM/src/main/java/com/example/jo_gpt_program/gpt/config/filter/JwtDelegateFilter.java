@@ -66,10 +66,14 @@ public class JwtDelegateFilter extends OncePerRequestFilter {
             conn.setInstanceFollowRedirects(false); // 리다이렉트 절대 따라가지 않음
             conn.setConnectTimeout(3000);
             conn.setReadTimeout(3000);
-            conn.getHeaderField("Set-Cookie"); // ← 이걸 읽어서 response 에 반영해야 해요! 쿠키 변경사항 적용
-
-
             int statusCode = conn.getResponseCode();
+
+            // 새 Access Token 쿠키 브라우저에 전달
+            String setCookie = conn.getHeaderField("Set-Cookie");
+            if (setCookie != null) {
+                response.setHeader("Set-Cookie", setCookie);
+                log.debug("[JwtDelegateFilter] 새 쿠키 브라우저에 전달: {}", setCookie);
+            }
             log.debug("[JwtDelegateFilter] 응답 코드={}", statusCode);
 
             if (statusCode == 200) {

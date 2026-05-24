@@ -33,7 +33,7 @@ public class GptChat {
 
     @Convert(converter = AesEncryptConverter.class)
     @Column(nullable = false, name = "Gpt_chat_contents", columnDefinition = "TEXT")
-    private String GptChatContents;
+    private String gptChatContents;
 
     @Column(nullable = true, name = "Gpt_chat_image")
     private String GptChatImage;

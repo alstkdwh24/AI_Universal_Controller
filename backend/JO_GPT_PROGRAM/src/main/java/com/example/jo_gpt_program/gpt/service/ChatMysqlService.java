@@ -30,7 +30,6 @@ public class ChatMysqlService {
     }
 
     public MyChat saveChat(Members members, ShowChat showChat, String myChatContents, String myChatImage) {
-        // 값이 있으면 memberrs1에 저장, 없으면 예외 발생
         MyChat chat = MyChat.builder()
                 .member(members)
                 .showChat(showChat)
@@ -38,48 +37,41 @@ public class ChatMysqlService {
                 .myChatImage(myChatImage)
                 .createTimeLogs(CreateTimeLogs.builder().build())
                 .build();
-        // DB에 저장
-
         return myChatRepository.save(chat);
-
     }
+
     @Transactional
     public String myChat(MyChatDTO dto, Members member) {
-        // 값이 있을수도 없을수도 있음을 표현하는 컨테이너 null대신 Optional로 감싸서 NullPointerException 방지
         Members members = memberRepository.findByMemberKey(member.getMemberKey())
                 .orElseThrow(() -> new RuntimeException("Member not found: " + member.getMemberKey()));
+
+        // showChatKey가 없거나 DB에 없으면 null 반환
         ShowChat showChat = showChatService.findShowNumber(dto.getShowChatKey());
+        if (showChat == null) {
+            log.warn("ShowChat not found for key: {}, localStorage를 초기화해주세요.", dto.getShowChatKey());
+            return null;
+        }
+
         log.debug("showChatTwo={}", showChat);
         MyChat chat = this.saveChat(members, showChat, dto.getMyChatContents(), dto.getMyChatImage());
         return chat.getMyChatContents();
     }
 
-
     /* 채팅 리스트 불러오기 */
     @Transactional
     public Set<ShowChatDTO> getChattingList() {
-        // 인증된 사용자 정보 추출
         UserInfoDto userInfo = (UserInfoDto) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Long memberKey = Long.parseLong(userInfo.getMemberId());
         Members members = memberRepository.findByMemberKey(memberKey)
                 .orElseThrow(() -> new RuntimeException("Member not found: " + memberKey));
-        // 맴버 정보로 채팅방 조회 Set은 중복 없는 컬렉션, showChatRepository의 findByMembers 메서드로 해당 멤버가
-        // 속한 채팅방들 조회
-        // set 의 특징
-        // 1. 중복불가
-        // 2. 순서 없음
-        // 3. null 하나만 허용
         Set<ShowChatDTO> showChatDTOS = showChatService.findShowChatNumber(members);
-
-
-        // Stream의 최종 연산으로, 스트림의 모든 요소를 Set 컬렉션으로 수집한다. 중복된 요소는 하나로 합쳐지고, 순서는 보장되지 않는다.
         return showChatDTOS;
     }
+
     public String userInfo(Long memberKey, MyChatDTO dto) {
         Members member = memberRepository.findByMemberKey(memberKey)
                 .orElseThrow(() -> new RuntimeException("Member not found: " + memberKey));
         log.debug("member={}", member);
-        return myChat(dto, member );
+        return myChat(dto, member);
     }
 }
-
