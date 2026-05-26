@@ -44,6 +44,8 @@ export default function App() {
     const [pendingNicknameSetup, setPendingNicknameSetup] = useState(false);
     const [notifications, setNotifications] = useState([]); // 알림 목록
     const [showSignup, setShowSignup] = useState(false);
+    const [chatKey, setChatKey] = useState(0);
+
 
     // 알림 추가 함수
     const handleNotification = (message, chatKey) => {
@@ -126,7 +128,15 @@ export default function App() {
         setToast(msg);
         setTimeout(() => setToast(''), 2500);
     };
+// 새 채팅 생성 함수 추가
+    const handleNewChat = () => {
+        localStorage.removeItem('showChat');  // ← 이전 채팅방 키 삭제!
 
+        setSelectedChatKey(null);  // 선택된 채팅방 초기화
+        setChatKey(prev => prev + 1);
+
+        setCurrentView('home');    // 홈으로 이동
+    }
     const renderContent = () => {
         switch (currentView) {
             case 'chat':
@@ -144,7 +154,7 @@ export default function App() {
                     />
                 );
             default:
-                return <ChatHome user={user} isActive={sidebarActive} selectedChatKey={selectedChatKey} onChatLoaded={() => setSelectedChatKey(null)} onChatSelect={(key) => { setSelectedChatKey(key); setCurrentView('home'); }} onNotification={handleNotification} />;
+                return <ChatHome key={chatKey} user={user} isActive={sidebarActive} selectedChatKey={selectedChatKey} onChatLoaded={() => setSelectedChatKey(null)} onChatSelect={(key) => { setSelectedChatKey(key); setCurrentView('home'); }} onNotification={handleNotification} />;
         }
     };
 
@@ -153,7 +163,7 @@ export default function App() {
             <SideBar
                 isActive={sidebarActive}
                 onMenuClick={() => setSidebarActive(prev => !prev)}
-                onHomeClick={() => setCurrentView('home')}
+                onHomeClick={handleNewChat}
                 onChatClick={() => setCurrentView('chat')}
                 onBellClick={() => setShowAlert(true)}
                 onSettingsClick={() => setCurrentView('settings')}

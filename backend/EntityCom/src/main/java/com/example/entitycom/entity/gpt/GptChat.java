@@ -48,12 +48,12 @@ public class GptChat {
     private CreateTimeLogs createTimeLogs;
 
     // GPT 테이블과 조인
-    @ManyToOne
+    @ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
     @JoinColumn(name = "gpt_key_gpt_key", referencedColumnName = "GPT_key")
     private GPT gptKey;
 
     /* ShowChat 참조 추가 */
-    @ManyToOne
+    @ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
     @JoinColumn(name = "show_key", referencedColumnName = "show_key")
     private ShowChat showChat;
 

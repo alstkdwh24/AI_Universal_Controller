@@ -21,7 +21,7 @@ export default function SideBar({ isActive, onMenuClick, onHomeClick, onChatClic
                 <button className={isActive ? 'sideBarImgActive' : 'sideBarImg'} onClick={onHomeClick}>
                     <div className="sideButton">
                         <i className="fa fa-plus same-font icon-controller"></i>
-                        <div className="sideBarText">홈</div>
+                        <div className="sideBarText">새 채팅</div>
                     </div>
                 </button>
                 <button className={isActive ? 'sideBarImgActive' : 'sideBarImg'} onClick={onChatClick}>

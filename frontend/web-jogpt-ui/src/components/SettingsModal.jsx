@@ -40,7 +40,7 @@ export default function SettingsModal({ onClose, user }) {
                         <div className="settings-section-label">정보</div>
                         <div className="settings-item">
                             <span className="settings-item-name">버전</span>
-                            <span className="settings-item-value">1.0.0</span>
+                            <span className="settings-item-value">1.0.2</span>
                         </div>
                     </div>
                 </div>

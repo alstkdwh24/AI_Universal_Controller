@@ -65,11 +65,11 @@ public class Members {
     private Devices devices;
 
     // GPT 대화내용을 참조하기 위한 조인
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<GPT> gptList = new ArrayList<>();
 
     // GPT 세션 정보를 참조하기 위한 조인
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<GPTSessions> gptSessionsList = new ArrayList<>();
 
     // 월 토큰 사용량을 참조하기 위한 조인

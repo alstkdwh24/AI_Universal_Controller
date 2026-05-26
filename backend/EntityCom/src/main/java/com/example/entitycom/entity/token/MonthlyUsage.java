@@ -25,7 +25,7 @@ public class MonthlyUsage {
     private String yyyyMM;
 
     // 아이디를 참고하기 위한 조인
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_key", referencedColumnName = "member_key")
     private Members member;
 

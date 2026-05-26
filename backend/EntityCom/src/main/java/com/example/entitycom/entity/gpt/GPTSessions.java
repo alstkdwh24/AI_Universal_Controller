@@ -32,7 +32,7 @@ public class GPTSessions {
     }
 
     /*Members태이블 조인 */
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_key", referencedColumnName = "member_key") // DB 컬럼명
     private Members member;
 
@@ -45,7 +45,7 @@ public class GPTSessions {
 
 
 
-    @OneToMany(mappedBy = "gptSessions", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "gptSessions", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<ChatHistory> chatHistory = new ArrayList<>();
 

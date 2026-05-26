@@ -1,4 +1,4 @@
-﻿import DOMPurify from 'dompurify';
+import DOMPurify from 'dompurify';
 import KakaoMap from './KakaoMap';
 import {marked} from 'marked';
 import {useEffect, useRef, useState} from 'react';
@@ -10,7 +10,9 @@ const TICK_MS = 18;
 
 const MODEL_OPTIONS = [
     {label: 'Gemini 이미지 버전', value: 'gemini-3.1-flash-image-preview'},
+    {label:"Gemini 3.5 버전", value: "gemini-3.5-flash"},
     {label: 'Gemini 3 버전', value: 'gemini-3-flash-preview'},
+
 
 
 
@@ -37,6 +39,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
+    const [loadingStatus, setLoadingStatus] = useState('');
     const [showScrollBtn, setShowScrollBtn] = useState(false); // 스크롤 내리기 버튼
     const [showChat, setShowChat] = useState(() => {
         const stored = localStorage.getItem('showChat');
@@ -225,6 +228,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
         const context = await checkDocument(myContent);
         const customPrompt = [base, context].filter(Boolean).join('\n');
 
+        setLoadingStatus('AI가 답변 생성 중...');
         const res = await fetchWithRefresh(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/first`, {
             method: 'POST',
             credentials: 'include',
@@ -251,33 +255,39 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
 // 두번째 보내는 것
     const continueSend = async (myContent, chatKey) => {
 
-
-        const res=await fetchWithRefresh(`${CONFIG.API_CONTENTS_URL}/contents/myContents`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({myChatContents: myContent, showChatKey: chatKey})
-        });
+        const res = await postFetch(
+            `${CONFIG.API_CONTENTS_URL}/contents/myContents`,
+            {myChatContents: myContent, showChatKey: chatKey}
+        );
         if(res.ok){
-            await fetchGptResponse(myContent, selectedModel, chatKey, myContent);
+            await fetchGptResponse(myContent, selectedModel, chatKey);
 
         }
 
     };
+
+
+
+    const postFetch = async (url, body) => {
+        return await fetchWithRefresh(url, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+
+    }
+
     // // 문서에 있는지 확인
     const checkDocument = async (myContent) => {
         const query = Array.isArray(myContent) ? myContent.findLast(m => m.role === 'user')?.content ?? '' : myContent;
         console.log('checkDocument', query);
         if(!query) return null;
         // 1. 서버에 "이 질문과 관련된 문서 있어?" 라고 물어봄
-        const res = await fetchWithRefresh(
+        const res = await postFetch(
             `${CONFIG.API_CONTENTS_URL}/contents/documents/search`,
-            {
-                method: 'POST',
-                credentials: 'include',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({query: query}) // 질문을 보내서 유사 문서 검색
-            });
+            {query: query}
+        );
         console.log('checkDocument', res);
         // 2. 관련 문서가 있으면 반환, 없으면 null
 
@@ -287,7 +297,6 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
     }
     /* gpt에 요청을 보내는 메서드*/
     const fetchGptResponse = async (myContent, model, chatKey) => {
-        console.log('fetchGptResponse', myContent, model, chatKey);
         // RAG작업
         const context = await checkDocument(myContent);
         // 유저 프롬프트
@@ -697,6 +706,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
         </div>
     );
 }
+
 
 
 

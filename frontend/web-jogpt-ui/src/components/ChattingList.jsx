@@ -34,15 +34,19 @@ export default function ChattingList({ onChatSelect, user }) {
         }
     };
 
-    // 시간 포맷
+    // 시간 포맷 - 한국 시간(Asia/Seoul)으로 변환
     const formatTime = (dateStr) => {
         const d = new Date(dateStr);
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        const hours = String(d.getHours()).padStart(2, '0');
-        const minutes = String(d.getMinutes()).padStart(2, '0');
-        return `${month}/${day} ${hours}:${minutes}`;
+        return d.toLocaleString('ko-KR', {
+            timeZone: 'Asia/Seoul',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
     };
+
     // 채팅 삭제 메서드
     const handleDelete = async (e, key) => {
         e.stopPropagation();

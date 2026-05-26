@@ -30,7 +30,7 @@ public class CompletedTimeLogs {
     @Column(nullable = false, name = "completed_time")
     private LocalDateTime completedTime;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_queue_key", referencedColumnName = "task_queue_key")
     private TaskQueue taskQueue;
 }
