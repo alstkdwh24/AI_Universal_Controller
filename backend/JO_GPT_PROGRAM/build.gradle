@@ -74,6 +74,9 @@ dependencies {
 
     // 벡터 스토어 (ChromaDB)
     implementation 'org.springframework.ai:spring-ai-starter-vector-store-chroma'
+    // HTML을 읽고 파싱하는 라이브러리
+    implementation 'org.jsoup:jsoup:1.17.2'
+
 
     implementation project(':EntityCom')
 }

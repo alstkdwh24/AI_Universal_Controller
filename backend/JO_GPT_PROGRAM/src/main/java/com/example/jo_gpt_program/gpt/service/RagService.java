@@ -2,9 +2,7 @@ package com.example.jo_gpt_program.gpt.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
@@ -18,22 +16,21 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service("ragService")
 public class RagService {
-    private final VectorStore vectorStore;
-    private final EmbeddingModel embeddingModel;
-    private final ChatClient chatClient;
-    private final ChatMemory chatMemory;
+    private int documentCount = 0; // 추가!
 
-    public RagService(VectorStore vectorStore, EmbeddingModel embeddingModel, ChatClient chatClient, ChatMemory chatMemory) {
+    private final VectorStore vectorStore;
+    private final ChatClient chatClient;
+
+    public RagService(VectorStore vectorStore,  ChatClient chatClient ) {
         this.vectorStore = vectorStore;
-        this.embeddingModel = embeddingModel;
         this.chatClient = chatClient;
-        this.chatMemory = chatMemory;
     }
 // 문서 저장 메서드
     
     public void saveDocument(String context, String source, String category) {
 
         String summary = chatClient.prompt()
+
                 .user("다음 내용을 3줄로 요약해줘 검색에 잘 걸리도록 면사 키워드 등으로:\n\n" + context)
                 .call()// AI한테 요청을 보내는 것
                 .content(); // 응답 객체에서 텍스트만 꺼내는 것
@@ -47,6 +44,7 @@ public class RagService {
 
         assert summary != null;
         vectorStore.add(List.of(new Document(summary, metadata)));
+        documentCount++;
     }
 
     /* 임베딩 */
@@ -57,10 +55,11 @@ public class RagService {
 
     public String findDocument(String query) {
         if (query == null || query.isBlank()) return "";
-
+        // 문서 없으면 임베딩 생성 자체를 스킵!
+        if(documentCount == 0) return "";
         List<Document> docs = vectorStore.similaritySearch(
                 SearchRequest.builder().query(query).topK(5).build());
-        log.debug("문서갯수", docs);
+        log.debug("문서갯수: {}", docs.size());  // ← 이렇게 해야 해요!
         return docs.stream()
                 .map(Document::getText)
                 .collect(Collectors.joining("\n---\n"));

@@ -95,7 +95,10 @@ public class GeminiService {
                 
                 4. 장소 특정 불가능 → NONE 반환
                    예) "오늘 날씨 어때"     → NONE
-                5. 직접 장소를 언급하진 않았지만
+                5. 사용자가 특정 지역명이나 역명 등을 언급하면 반드시 그 지역 or 역 근처에 있는 장소만 검색하고 추천해줘
+                    다른 지역 장소는 절대 포함하지마
+                
+                6. 직접 장소를 언급하진 않았지만
                    문맥상 장소와 관련된 키워드가 있으면
                    → CURRENT_LOCATION:추출한 장소유형
                 
@@ -128,7 +131,6 @@ public class GeminiService {
             ChatClient independentClient = ChatClient.builder(chatModel).build();
             String result = independentClient.prompt()
                     .options(GoogleGenAiChatOptions.builder()
-                            .model("gemini-3.5-flash")
                             .maxOutputTokens(200)
                             .build())
                     .user(prompt)

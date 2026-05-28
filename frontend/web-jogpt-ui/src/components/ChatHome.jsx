@@ -10,10 +10,8 @@ const TICK_MS = 18;
 
 const MODEL_OPTIONS = [
     {label: 'Gemini 이미지 버전', value: 'gemini-3.1-flash-image-preview'},
-    {label:"Gemini 3.5 버전", value: "gemini-3.5-flash"},
+    {label: "Gemini 3.5 버전", value: "gemini-3.5-flash"},
     {label: 'Gemini 3 버전', value: 'gemini-3-flash-preview'},
-
-
 
 
 ];
@@ -39,7 +37,6 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
-    const [loadingStatus, setLoadingStatus] = useState('');
     const [showScrollBtn, setShowScrollBtn] = useState(false); // 스크롤 내리기 버튼
     const [showChat, setShowChat] = useState(() => {
         const stored = localStorage.getItem('showChat');
@@ -57,6 +54,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
     // 2. 타이머 ID처럼 저장만 하고 화면엔 안 보여줄 때
     // 3. 리벤더링 사이에도 값을 유지해야 할 때
 
+    const [loadingStatus, setLoadingStatus] = useState('');
 
     const [selectedModel, setSelectedModel] = useState(MODEL_OPTIONS[0].value);
     const textareaRef = useRef(null);
@@ -122,10 +120,6 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
         setLoading(true);
         fetchWithRefresh(`${CONFIG.API_CONTENTS_URL}/contents/chatRoom/${selectedChatKey}/messages`, {
             credentials: 'include'
-            // fetch() 요청시 브라우저가 쿠키를 자동으로 함께 전송하도록 하는 옵션입니다.
-            // 기본값은 'same-origin' 이라 다른 도메인으로 요청할때 쿠키가 안실려가는데, 'include'로 설정하면 cross-origin 요청에도 쿠키를 포함시킵니다.
-
-
         })
             .then(res => res.json())
             .then(data => {
@@ -143,7 +137,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            handleSend();
+            void handleSend();
         }
 
         // 위 화살표 - 이전입력 (커서가 맨 앞일 때만)
@@ -218,6 +212,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
             setMessages(prev => [...prev, {role: 'ai', content: '오류가 발생했습니다.'}]);
         } finally {
             setLoading(false);
+            setLoadingStatus('');
         }
     };
 
@@ -251,21 +246,16 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
     };
 
 
-
 // 두번째 보내는 것
     const continueSend = async (myContent, chatKey) => {
-
-        const res = await postFetch(
+        setLoadingStatus('문서 검색 중...');
+        await postFetch(
             `${CONFIG.API_CONTENTS_URL}/contents/myContents`,
             {myChatContents: myContent, showChatKey: chatKey}
         );
-        if(res.ok){
-            await fetchGptResponse(myContent, selectedModel, chatKey);
 
-        }
-
+        await fetchGptResponse(myContent, selectedModel, chatKey);
     };
-
 
 
     const postFetch = async (url, body) => {
@@ -278,11 +268,15 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
 
     }
 
+    const saveDocument = async (myContent, chatKey) => {
+
+    }
+
     // // 문서에 있는지 확인
     const checkDocument = async (myContent) => {
         const query = Array.isArray(myContent) ? myContent.findLast(m => m.role === 'user')?.content ?? '' : myContent;
         console.log('checkDocument', query);
-        if(!query) return null;
+        if (!query) return null;
         // 1. 서버에 "이 질문과 관련된 문서 있어?" 라고 물어봄
         const res = await postFetch(
             `${CONFIG.API_CONTENTS_URL}/contents/documents/search`,
@@ -298,7 +292,9 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
     /* gpt에 요청을 보내는 메서드*/
     const fetchGptResponse = async (myContent, model, chatKey) => {
         // RAG작업
+        setLoadingStatus('문서 검색 중...');
         const context = await checkDocument(myContent);
+        setLoadingStatus('AI가 답변 생성 중...');
         // 유저 프롬프트
         const base = localStorage.getItem('CUSTOM_PROMPT')?.trim() || '';
         // 유저 프롬프트 + RAG 작업으로 나온 결과를 프롬프트로 보낸다.
@@ -326,35 +322,21 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
 
         // GPT 답변 알람 관련 메서드
         const sendBrowserNotification = (content) => {
-            // 웹 브라우저가 알림 기능을 지원하는가??
-            // 사용자가 이 사이트의 알림 수신을 동의했는가??
-            // 현재 웹페이지가 사용자에게 숨겨져 있는가??
             if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
-
                 new Notification('JO-GPT 답변 도착', {
-
                     body: content.replace(/[#*`>\-]/g, '').slice(0, 80),
-
                     icon: '/image/blueChatTing.png',
-
                 });
-
             }
-
         };
-        // 다형성 처리 - 서버가 단순 텍스트만 줄수도 있고, 여러 형태의 것을 줄 수도 있다.
-        // 일단 gpt 답변을 텍스트로 변환
+
         const gptText = await res.text();
         if (gptText) {
             let fullContent = gptText;
-            // 이미지를 받기 위한 변수
             let images = [];
             try {
-
-                // text로 변환이 된것은 맞지만 텍스트의 내용물이 JSON이여서 한번더 해석이 필요하다 text 의 글가자 JSON일 거니까
                 const parsed = JSON.parse(gptText);
                 if (parsed.text !== undefined && parsed.images !== undefined) {
-                    // 파씽 된 것들중에 이미지 텍스트 나눔
                     fullContent = parsed.text;
                     images = parsed.images;
                 }
@@ -363,29 +345,25 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
                 // eslint-disable-next-line no-empty
             }
 
-            // 빈 메시지로 먼저 추가 후 타이핑 애니메이션 시작
             setMessages(prev => [...prev, {role: 'ai', content: '', images, streaming: true}]);
 
             let i = 0;
-            clearInterval(streamIntervalRef.current); // 타이머 정리 streamIntervalRef.current를 통해 이전에 실행 중이던 타이머가 있으면 멈춤니다.
+            clearInterval(streamIntervalRef.current);
             streamIntervalRef.current = setInterval(() => {
                 i = Math.min(i + CHUNK_SIZE, fullContent.length);
                 const chunk = fullContent.slice(0, i);
                 const done = i >= fullContent.length;
-                // 상태 덮어쓰기: 배열의 맨 마지막 메시지를 찾아, 방금 잘라낸 chunk로 내용을 덮어씁니다. 이 과정이 빠르게 반복되며 타이핑되는 것처럼 보입니다.
                 setMessages(prev => {
                     const next = [...prev];
                     next[next.length - 1] = {...next[next.length - 1], content: chunk, streaming: !done};
                     return next;
                 });
-                // 종료 처리
                 if (done) {
                     clearInterval(streamIntervalRef.current);
                     sendBrowserNotification(fullContent);
                 }
             }, TICK_MS);
-            // 알림 처리
-            fetchWithRefresh(`${CONFIG.API_CONTENTS_URL}/contents/notifications`, {
+            await fetchWithRefresh(`${CONFIG.API_CONTENTS_URL}/contents/notifications`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: {'Content-Type': 'application/json'},
@@ -406,7 +384,8 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
                 fullContent = parsed.text;
                 images = parsed.images;
             }
-        } catch (_e) {}
+        } catch (_e) {
+        }
         setAttachedFiles([]);
         setMessages(prev => [...prev, {role: 'ai', content: '', images, streaming: true}]);
         let i = 0;
@@ -415,32 +394,27 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
             i = Math.min(i + CHUNK_SIZE, fullContent.length);
             const chunk = fullContent.slice(0, i);
             const done = i >= fullContent.length;
-            setMessages(prev => { const next = [...prev]; next[next.length - 1] = {...next[next.length - 1], content: chunk, streaming: !done}; return next; });
-            if (done) { clearInterval(streamIntervalRef.current); }
+            setMessages(prev => {
+                const next = [...prev];
+                next[next.length - 1] = {...next[next.length - 1], content: chunk, streaming: !done};
+                return next;
+            });
+            if (done) {
+                clearInterval(streamIntervalRef.current);
+            }
         }, TICK_MS);
         if (onNotification) onNotification(fullContent.slice(0, 50), chatKey);
     };
 
-// 이 코드의 장점
-// 사용자 참여 유도 : 앱이 백그라운드에 있거나 다른 탭을 보고 있을 때도 중요한 정보를 실시간으로 전달가능
-// 표준 API를 사용하여 추가 라이브러리 없이 구현 가능
-// React 컴포넌트가 마운트되거나 업데이트될 떼 사이드 이펙트(Side Effect)를 수행하기위해 사용됩니다.
     useEffect(() => {
-        // 브라우저가 데스크톱 알림을 지원하는지 확인하는 인터페이스
         if (!('Notification' in window)) {
-            // requestPermission() 사용자에게 알림 표시 권한을 명시작으로 요청하는 메서드. 결과 값으로 granted(허용), denied(거부), default(무응답) 중 하나를 반환합니다.
             console.log("이 브라우저는 알림을 지원하지 않습니다.");
             return;
         }
-
-        // 2. 현재 권한 상태 확인 후 요청
-        // 권한이 허용되지 않았을 때만 요청
         if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-            // requestPermission() 메서드를 사용하여 사용자에게 알림 권한을 요청합니다. 사용자가 허용하면 granted, 거부하면 denied, 아무런 응답이 없으면 default가 반환됩니다.
             Notification.requestPermission().then((permission) => {
                 if (permission === 'granted') {
                     console.log("알림 권한이 허용되었습니다.");
-
                     new Notification("알림이 활성화되었습니다!", {
                         body: "이제 새로운 메시지가 도착하면 알림을 받을 수 있습니다.",
                         icon: '/favicon.ico'
@@ -450,63 +424,43 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
                 }
             })
         }
-    }, []); // 빈 배열을 넣어서 컴포넌트 마운트 시 1회만 실행
-// 파일 이미지 처리:
+    }, []);
+
     const handleFileSelect = async (e) => {
-
-        // 파일 목록 배열 변환
         const files = Array.from(e.target.files);
-
-        // 비동기 병렬 처리 - 모든 파일을 base64로 변환
         const processed = await Promise.all(files.map(async (file) => {
             const base64 = await toBase64(file);
             return {
                 name: file.name,
                 mimeType: file.type,
-                data: base64.split(',')[1], // "data:image/png;base64,..."에서 실제 base64 데이터 부분만 추출
+                data: base64.split(',')[1],
                 type: file.type.startsWith('image/') ? 'image' : 'file'
             };
         }));
-
-        // setAttachedFiles는 React에서 useState로 만든 상태를 바꾸는 Setter 함수. 첨부 파일 목록을 이걸로 바꿔줘 라고 요청하는 것입니다.
-        // prev => ... 는 Previous의 약자로 수정전 파일 목록을 의미 React는 상태를 업데이트할 때 가장 최신의 상태값을 안전하게 가져오기 위해 이런 함수형 방식을 권장
-        // [...prev, ...processed]는 기존 파일 목록(prev)과 새로 처리된 파일 목록(processed)을 합쳐서 새로운 배열을 만드는 코드입니다. 즉, 기존에 첨부된 파일들은 유지하면서 새로 선택한 파일들을 추가하는 형태입니다.
         setAttachedFiles(prev => [...prev, ...processed]);
     };
 
     const toBase64 = (file) =>
-        // 약속이라고 보면 된다.
         new Promise((resolve, reject) => {
-            // FileReader는 웹 브라우저에서 제공하는 API로, 파일을 읽어서 다양한 형식으로 변환할 수 있게 해주는 객체입니다. 여기서는 파일을 base64 문자열로 변환하기 위해 사용됩니다.
             const reader = new FileReader();
-            // 성공 시
             reader.onload = () => resolve(reader.result);
-            // 실패 시
             reader.onerror = (error) => reject(error);
-            // 파일 읽기 시작
             reader.readAsDataURL(file);
         });
-    // 클럽보드 이벤트 발생
+
     const handlePaste = (e) => {
         console.log('paste 이벤트 발생', e.clipboardData?.items);
-
-        // e.clipboardData.items 는 배열처럼 보이지만 실제로는 유사 배열 객체입니다. 그리고 이걸 진짜 배열로 변환을 합니다.
         const items = Array.from(e.clipboardData?.items || []);
         console.log('items:', items.map(i => `kind=${i.kind} type=${i.type}`));
-        // 항목들중 kind가 "file"인 것만 골라냅니다.
         const fileItems = items.filter(item => item.kind === 'file');
         if (fileItems.length === 0) return;
 
         e.preventDefault();
-        // item.getAsFile() : DataTransferItem 객체를 자바스크립트에서 다룰수 있는 File 객체로 변환해주는 메서드입니다. 이과정을 거쳐야만 파일을 서비로 전송하거나 이미지 미리보기를 만들 수 있습니다.
         const files = fileItems.map(item => item.getAsFile()).filter(Boolean);
         if (files.length === 0) return;
 
         files.forEach(file => {
-            // toBase64 결과 값은 보통 data:image/png;base64,iVBOR... 형식을 가진다.
-            // .split(',')[1]은 앞의 메타 정보를 떼어내고 순수한 데이터 내용만 추출하기 위해 사용합니다.
             toBase64(file).then(base64 => {
-                // 기존에 첨부된 파일들을 유지하면서, 새로운 파일 객체를 배열 끝에 추가합니다.
                 setAttachedFiles(prev => [...prev, {
                     name: file.name || `pasted-image-${Date.now()}.png`,
                     mimeType: file.type || 'image/png',
@@ -517,38 +471,26 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
         });
     };
 
-// 음성인식 처리:
     const handleVoice = () => {
-
-        // 브라우저에서 사용자 목소리를 인식해 텍스트로 변환해주는 Web Speech API를 사용하기 위한 초기 설정 단계이다.
-        // W3C 표준에 따른 음성 인식 인터페이스 이름입니다. (주로 최신 파이어폭스 등에서 사용) window.SpeechRecognition
-        // window.webkitSpeechRecognition 구글 크롬, 사파리 등 'Webkit'엔진을 사용하는 브라우저에서 음성인식을 구현할 때 사용하는 이름입니다.
         const SpeechRecofnition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
         if (!SpeechRecofnition) {
             alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
             return;
         }
-
         if (isRecording) {
             recognitionRef.current?.stop();
             setIsRecording(false);
             return;
         }
-
         const recognition = new SpeechRecofnition();
         recognition.lang = 'ko-KR';
-        // 연속성 x
         recognition.continuous = false;
-        // 중간 결과 x
         recognition.interimResults = false;
-        // 음식인식을 텍스트 데이터로 가져오는 역할을 한다.
         recognition.onresult = (e) => setInput(prev => prev + e.results[0][0].transcript);
         recognition.onerror = (e) => console.error("음성 인식 오류:", e);
         recognition.start();
         recognitionRef.current = recognition;
         setIsRecording(true);
-
     };
 
 
@@ -574,8 +516,10 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
                                         className={msg.streaming ? 'streaming-cursor' : ''}
                                         dangerouslySetInnerHTML={{
                                             __html: DOMPurify.sanitize(
-                                                marked.parse(msg.content.replace(/\[\[MAP_START:[\s\S]*?:MAP_END\]\]/g, '').trim())
-                                            )
+                                                marked.parse(
+                                                    msg.content.replace(/\[\[MAP_START:[\s\S]*?:MAP_END]]/g, '').trim(),
+                                                    {async: false}
+                                                ))
                                         }}
                                     />
                                 )}
@@ -588,7 +532,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
                                         } catch {
                                             return null;
                                         }
-                                    })()} mapId={`map-${i}`} />
+                                    })()} mapId={`map-${i}`}/>
                                 )}
                                 {msg.images && msg.images.length > 0 && (
                                     <div className="gpt-image-wrap">
@@ -609,9 +553,15 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
                 {loading && (
                     <div className="loading" id="start-loading">
                         <div id="geminiContent-geminiContent">
+                            {/* ✅ 원형 아이콘을 wrapper로 감싸서 텍스트와 분리 */}
                             <div className="gemini-loader">
-                                <div className="gemini-ring"></div>
-                                <span className="gemini-star">⬥</span>
+                                <div className="gemini-loader-icon">
+                                    <div className="gemini-ring"></div>
+                                    <span className="gemini-star">⬥</span>
+                                </div>
+                                {loadingStatus && (
+                                    <span className="gemini-loader-text">{loadingStatus}</span>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -706,9 +656,3 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
         </div>
     );
 }
-
-
-
-
-
-

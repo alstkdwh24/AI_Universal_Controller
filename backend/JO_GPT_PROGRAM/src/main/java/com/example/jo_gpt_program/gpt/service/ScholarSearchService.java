@@ -236,7 +236,8 @@ public class ScholarSearchService {
             return response.getBody();
         }catch(Exception e){
 
-            return null;
+            log.error("Tavily 검색 실패: {}", e.getMessage());
+            return "";
         }
     }
 }

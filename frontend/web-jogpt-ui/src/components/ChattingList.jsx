@@ -44,7 +44,8 @@ export default function ChattingList({ onChatSelect, user }) {
             hour: '2-digit',
             minute: '2-digit',
             hour12: false
-        });
+        }).replace('. ', '/')
+            .replace("." ,"");
     };
 
     // 채팅 삭제 메서드

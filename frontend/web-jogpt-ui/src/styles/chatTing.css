@@ -58,19 +58,22 @@
     box-shadow: 0px 0px 10px rgba(160, 190, 240, 0.2);
     border-radius: 1rem;
     width: 100%;
-    padding-left: 1rem;
     padding-right: 1rem;
 }
 
 /*채팅 아이콘 css*/
 #search-icon {
-    scale: 1.2;
+    scale: 1.4;
     background: linear-gradient(135deg, #A8C8FF, #3A6BF5);
     /* 그라데이션 배경 설정 */
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-right: 1rem;
+    /*margin-right: 1rem;*/
+    width: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /*채팅 검색 input css*/

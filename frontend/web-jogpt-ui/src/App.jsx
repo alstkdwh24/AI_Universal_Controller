@@ -10,6 +10,7 @@ import SettingsView from './components/SettingsView';
 import SideBar from './components/SideBar';
 import TopBar from './components/TopBar';
 import CONFIG from './config/config';
+import DocumentUpload from './components/DocumentUpload';
 
 import './styles/alertModal.css';
 import './styles/chatTing.css';
@@ -97,13 +98,10 @@ export default function App() {
                 credentials: 'include',
 
             });
-            if (res.ok) {
+
                 const data = await res.json();
                 setUser(data);
-            } else if (res.status === 401) {
-                localStorage.removeItem('ACCESS_TOKEN');
-                showToastMessage('로그인이 만료되었습니다. 다시 로그인해주세요.');
-            }
+
         } catch (e) {
             console.error('사용자 정보 로드 실패:', e);
         }

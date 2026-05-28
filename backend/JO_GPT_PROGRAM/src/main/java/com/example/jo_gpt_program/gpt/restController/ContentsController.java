@@ -9,6 +9,8 @@ import com.example.jo_gpt_program.gpt.dto.SaveDocumentDTO;
 import com.example.jo_gpt_program.gpt.dto.ShowChatDTO;
 import com.example.jo_gpt_program.gpt.service.*;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -194,5 +197,22 @@ public class ContentsController {
     public ResponseEntity<String> findShowRoom(MessageDTO dto){
         List<GptChat> gptChat = showChatService.findShowRoom(dto);
         return ResponseEntity.ok(gptChat.toString());
+    }
+
+    // 크롤링
+    @PostMapping("/crawl")
+    public ResponseEntity<String> crawlUrl(@RequestBody Map<String, String> body) {
+        String url = body.get("url");
+        try {
+            Document doc = Jsoup.connect(url)
+                    .timeout(5000)
+                    .get();
+            String text = doc.body().text();
+            return ResponseEntity.ok(text);
+        } catch (IOException e) {  // ← 여기서 잡아야 해요!
+            log.error("크롤링 실패: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body("크롤링 실패: " + e.getMessage());
+        }
     }
 }

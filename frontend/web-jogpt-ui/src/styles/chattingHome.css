@@ -86,12 +86,10 @@
 
 /* Gemini 스타일 로딩 */
 .gemini-loader {
-    width: 48px;
-    height: 48px;
-    position: relative;
     display: flex;
+    flex-direction: row;
     align-items: center;
-    justify-content: center;
+    gap: 12px;
     margin: 0.8rem 1rem;
 }
 
@@ -367,4 +365,21 @@
     #realGeminiContent table {
         font-size: 0.85rem;
     }
+}
+/* 로딩 아이콘 wrapper */
+.gemini-loader-icon {
+    width: 48px;
+    height: 48px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* 로딩 텍스트 */
+.gemini-loader-text {
+    font-size: 14px;
+    color: #5B8DF5;
+    font-family: 'Noto Sans KR', sans-serif;
 }
