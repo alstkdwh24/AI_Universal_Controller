@@ -215,6 +215,7 @@ public class ScholarSearchService {
     }
 
     public String searchWithTavily(String query){
+        if(query.length() > 400) return "";
         RestTemplate restTemplate = new RestTemplate();
 
         // 1. HTTP 헤더 설정 (우리는 JSON형식으로 대화할 것이라고 선언)

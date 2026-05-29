@@ -25,7 +25,7 @@ import java.util.List;
 public class GeminiRestEmbeddingModel implements EmbeddingModel {
 
     private static final String EMBED_URL =
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent";
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent";
 
     private final String apiKey;
     private final HttpClient httpClient;
@@ -110,6 +110,6 @@ public class GeminiRestEmbeddingModel implements EmbeddingModel {
     @Override
     public int dimensions() {
         // text-embedding-004 의 벡터 차원
-        return 768;
+        return 3072;
     }
 }

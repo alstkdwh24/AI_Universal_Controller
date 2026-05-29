@@ -16,11 +16,14 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EnableJpaRepositories(basePackages = {
         "com.example.jo_gpt_program"
 })
-@EnableJpaAuditing // ✅ 이것도 필요
+@EnableJpaAuditing //  이것도 필요
 public class JoGptProgramApplication {
 
     public static void main(String[] args) {
-        new SpringApplicationBuilder(JoGptProgramApplication.class).run(args);
+        new SpringApplicationBuilder(JoGptProgramApplication.class)
+                .initializers(new com.example.jo_gpt_program.gpt.config.ChromaInitializer()) // ← 이거 추가!
+
+                .run(args);
 
     }
 

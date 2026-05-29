@@ -38,6 +38,8 @@ public class GeminiService {
     private final ChatClient chatClient;
     private final ChatModel chatModel;
     private final ChatMemory chatMemory;
+    private final RagService ragService;
+
     private final ShowChatRepository showChatRepository;
     private final GptChatRepository gptChatRepository;
     private final ScholarSearchService scholarSearchService;
@@ -60,10 +62,11 @@ public class GeminiService {
             "어디", "위치", "장소", "지도", "근처", "주변", "찾아줘", "알려줘"
     );
 
-    public GeminiService(ChatClient chatClient, ChatModel chatModel, ChatMemory chatMemory, ShowChatRepository showChatRepository, GptChatRepository gptChatRepository, ScholarSearchService scholarSearchService, KakaoMapService kakaoMapService) {
+    public GeminiService(ChatClient chatClient, ChatModel chatModel, ChatMemory chatMemory, RagService ragService, ShowChatRepository showChatRepository, GptChatRepository gptChatRepository, ScholarSearchService scholarSearchService, KakaoMapService kakaoMapService) {
         this.chatClient = chatClient;
         this.chatModel = chatModel;
         this.chatMemory = chatMemory;
+        this.ragService = ragService;
         this.showChatRepository = showChatRepository;
         this.gptChatRepository = gptChatRepository;
         this.scholarSearchService = scholarSearchService;
@@ -169,9 +172,10 @@ public class GeminiService {
                     .text(dto.getMyChatContents())
                     .build();
         }
-
+        // 앱 검색
         String webResults = scholarSearchService.searchWithTavily(dto.getMyChatContents());
-        String systemPrompt = getString(customPrompt, webResults);
+        String ragResult = ragService.findDocument(dto.getMyChatContents());
+        String systemPrompt = getString(customPrompt, webResults, ragResult);
         String conversationId = dto.getShowChatKey() != null ? dto.getShowChatKey().toString() : null;
         List<Message> history = conversationId != null ? chatMemory.get(conversationId) : List.of();
         log.info("[DEBUG] conversationId={}, historySize={}", conversationId, history.size());
@@ -179,7 +183,7 @@ public class GeminiService {
 
         if (model.contains("image")) {
             return sendGeminiImageDirect(dto.getMyChatContents(), dto.getFiles(), model, systemPrompt,
-                    dto.getShowChatKey(), conversationId, history, message);
+                    dto.getShowChatKey(), conversationId, history, message, ragResult);
         }
 
         List<Message> allMessages = new ArrayList<>(history);
@@ -238,10 +242,12 @@ public class GeminiService {
         } else {
             log.warn("[sendGeminiAI] 응답이 null이거나 conversationId가 없습니다.");
         }
+        saveToVectorStore(ragResult, response);
+
         return response;
     }
 
-    private static @NonNull String getString(String customPrompt, String webResults) {
+    private static @NonNull String getString(String customPrompt, String webResults, String ragResult) {
 
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
@@ -259,11 +265,11 @@ public class GeminiService {
                 웹 검색 결과가 없으면 학습 데이터 기준으로 답변하되,
                 "정확한 최신 정보는 직접 확인이 필요합니다."라고 꼭 덧붙이세요.
                 """.formatted(today);
-        return webResults.isBlank() ? basePrompt + datePrompt : basePrompt + datePrompt + "\n\n[웹 검색 결과]\n" + webResults;
+        return webResults.isBlank() ? ragResult.isBlank() ? basePrompt + datePrompt : ragResult + basePrompt + datePrompt : ragResult.isBlank()?  basePrompt + datePrompt + webResults : basePrompt + datePrompt + webResults + ragResult;
     }
 
     private String sendGeminiImageDirect(String userMessage, List<MyChatDTO.FilePartDTO> files, String model,
-                                         String systemText, Long showChatKey, String conversationId, List<Message> history, UserMessage message) {
+                                         String systemText, Long showChatKey, String conversationId, List<Message> history, UserMessage message, String ragResult) {
 
         List<Part> parts = new ArrayList<>();
         parts.add(Part.fromText(userMessage));
@@ -318,7 +324,7 @@ public class GeminiService {
         log.info("[ImageGen] 결과 - text길이={}, 이미지수={}", textContent.length(), images.size());
 
         // // 장소 키워드 감지 → 지도 좌표 붙이기
-        if (isMapRequest(userMessage) ) {
+        if (isMapRequest(userMessage)) {
             String location = extractLocationWithAI(userMessage);  // ① AI 추출
             log.info("[search_map] AI 추출 결과={}", location);
 
@@ -349,6 +355,7 @@ public class GeminiService {
                 .showChat(showChat)
                 .build();
         gptChatRepository.save(gptChat);
+        saveToVectorStore( ragResult, cleanTextContent);
 
         if (!images.isEmpty()) {
             Map<String, Object> result = new LinkedHashMap<>();
@@ -356,12 +363,29 @@ public class GeminiService {
             result.put("images", images);
             try {
                 return new ObjectMapper().writeValueAsString(result);
+
             } catch (Exception e) {
                 log.error("이미지 응답 직렬화 실패", e);
             }
         }
-
+        // 벡터 db저장
         return textContent;
+    }
+
+    // 벡터 db에 저장 로직
+    private void saveToVectorStore( String ragResult, String llmAnswer){
+        log.info("[saveToVectorStore 호출됨] ...");
+        log.info("llmAnswer={}", llmAnswer);
+        log.info("ragResult={}", ragResult);
+
+            String context =
+                    ragResult.isBlank() ? llmAnswer : "\n\n[RAG 검색 결과]\n" + ragResult
+                            + "\n\n[AI 답변]\n" + llmAnswer;
+
+
+
+        log.info("context{}", context);
+        ragService.saveDocument(context, "chat", "대화");
     }
 }
 

@@ -6,6 +6,16 @@ const ACTIVE_KEY = 'CUSTOM_PROMPT';
 // ===================== 업데이트 내역 데이터 =====================
 const UPDATE_LOGS = [
     {
+        version: '1.0.3',
+        date: '2025-05-26',
+        changes: [
+            '임베딩 관련 코드 구성',
+            '검색 api 긴 검색어 때문에 llm오류 현상 해결',
+            "검색 쿼리 글자 401이상이여도 빠른 llm 응답 로직 구현"
+
+        ],
+    },
+    {
         version: '1.0.2',
         date: '2025-05-26',
         changes: [

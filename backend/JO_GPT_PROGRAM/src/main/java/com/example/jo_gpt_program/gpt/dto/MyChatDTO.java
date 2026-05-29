@@ -22,6 +22,7 @@ public class MyChatDTO {
     private LocalDateTime myChatRegistration;
     private Long showChatKey;
     private List<FilePartDTO> files;
+    private String customPrompt; // ✅ X-Custom-Prompt 헤더 대신 body로 받기
 
     public static class FilePartDTO {
         private String name;

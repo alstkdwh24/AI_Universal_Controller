@@ -19,8 +19,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,27 +68,19 @@ public class ContentsController {
     /* Gemini 호출 — Authorization으로 멤버 식별, DB의 활성 프롬프트 자동 적용 */
     @PostMapping("/gptContents")
     public ResponseEntity<String> getGptContents(@RequestBody MyChatDTO dto,
-                                                 @RequestHeader(value = "X-Model", defaultValue = "gemini-3.1-flash-image-preview") String model,
-                                                             @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {
-        String decoded = customPrompt != null ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8) : null;
-        String response = geminiService.sendGeminiAI(dto, model, decoded);
-
+                                                 @RequestHeader(value = "X-Model", defaultValue = "gemini-2.0-flash") String model) {
+        // ✅ customPrompt를 헤더 대신 body(dto)에서 꺼냄 → 헤더 크기 초과 문제 해결
+        String response = geminiService.sendGeminiAI(dto, model, dto.getCustomPrompt());
         return ResponseEntity.ok(response);
     }
 
-    // 채팅방 생성 API
-    @PostMapping("/chatRoom")
-    public ResponseEntity<Long> createChatRoom(@RequestBody MyChatDTO dto) {
-        Long showChatKey = showChatService.createChat(dto);
-        return ResponseEntity.ok(showChatKey);
-    }
 
-    // ✅ 채팅방 생성 + AI 응답 한번에 처리 (첫 메시지 로딩 속도 개선)
+
+    //  채팅방 생성 + AI 응답 한번에 처리 (첫 메시지 로딩 속도 개선)
     @PostMapping("/chatRoom/first")
     public ResponseEntity<Map<String, Object>> createChatRoomAndGetResponse(
             @RequestBody MyChatDTO dto,
-            @RequestHeader(value = "X-Model", defaultValue = "gemini-3.1-flash-image-preview") String model,
-            @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {
+            @RequestHeader(value = "X-Model", defaultValue = "gemini-2.0-flash") String model) {
 
         // 1. 채팅방 생성
         Long showChatKey = showChatService.createChat(dto);
@@ -98,15 +88,12 @@ public class ContentsController {
         // 2. DTO에 채팅방 키 세팅
         dto.setShowChatKey(showChatKey);
 
-        // 3. AI 응답 요청
-        String decoded = customPrompt != null
-                ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8)
-                : null;
-        String response = geminiService.sendGeminiAI(dto, model, decoded);
+        // 3. AI 응답 요청 (✅ customPrompt를 헤더 대신 body(dto)에서 꺼냄)
+        String response = geminiService.sendGeminiAI(dto, model, dto.getCustomPrompt());
 
         // 4. 채팅방 키 + AI 응답 한번에 반환
         return ResponseEntity.ok(Map.of(
-                "chatKey", showChatKey,
+                "chatKey", String.valueOf(showChatKey),
                 "response", response
         ));
     }
@@ -157,10 +144,8 @@ public class ContentsController {
     // 학술 검색 + AI 답변
     @PostMapping("/getScholarContents")
     public ResponseEntity<String> postMethodName(@RequestBody MyChatDTO dto,
-                                                 @RequestHeader(value = "X-Model", defaultValue = "gemini-3.0-flash") String model,
-                                                 @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {
-        String decoded = customPrompt != null ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8) : null;
-        String response = scholarSearchService.sendWithScholar(dto, model, decoded);
+                                                 @RequestHeader(value = "X-Model", defaultValue = "gemini-2.0-flash") String model) {
+        String response = scholarSearchService.sendWithScholar(dto, model, dto.getCustomPrompt());
         return ResponseEntity.ok(response);
     }
 
@@ -168,10 +153,8 @@ public class ContentsController {
     @PostMapping("/getRagScholarContents")
     public ResponseEntity<String> getGptRagScholarContents(
             @RequestBody MyChatDTO dto,
-            @RequestHeader(value = "X-Model", defaultValue = "gemini-3.1-flash-image-preview") String model,
-            @RequestHeader(value = "X-Custom-Prompt", required = false) String customPrompt) {
-        String decoded = customPrompt != null ? URLDecoder.decode(customPrompt, StandardCharsets.UTF_8) : null;
-        String response = scholarSearchService.sendWithRagAndScholar(dto, model, decoded);
+            @RequestHeader(value = "X-Model", defaultValue = "gemini-2.0-flash") String model) {
+        String response = scholarSearchService.sendWithRagAndScholar(dto, model, dto.getCustomPrompt());
         return ResponseEntity.ok(response);
     }
 

@@ -28,22 +28,28 @@ public class RagService {
 // 문서 저장 메서드
     
     public void saveDocument(String context, String source, String category) {
-
+        log.info("123456789");
         String summary = chatClient.prompt()
 
                 .user("다음 내용을 3줄로 요약해줘 검색에 잘 걸리도록 면사 키워드 등으로:\n\n" + context)
                 .call()// AI한테 요청을 보내는 것
                 .content(); // 응답 객체에서 텍스트만 꺼내는 것
+        log.info("summary: {}", summary);
         // 벡터 DB에 문서를 저장하는 메서드, RAG에서 검색할 수 있도록 텍스트를 벡터로 변환하여 저장합니다.
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("source", source);
         metadata.put("category", category);
         metadata.put("saveAt", LocalDateTime.now().toString());
         metadata.put("originalLength", context.length()); // 원본 길이만 기록
-
+        log.info("metadata: {}", metadata);
 
         assert summary != null;
-        vectorStore.add(List.of(new Document(summary, metadata)));
+        try {
+            vectorStore.add(List.of(new Document(summary, metadata)));
+            log.info("[RAG 저장 완료] documentCount={}", ++documentCount);
+        } catch (Exception e) {
+            log.error("[RAG 저장 실패] 에러={}", e.getMessage(), e);
+        }
         documentCount++;
     }
 
@@ -55,10 +61,11 @@ public class RagService {
 
     public String findDocument(String query) {
         if (query == null || query.isBlank()) return "";
-        // 문서 없으면 임베딩 생성 자체를 스킵!
-        if(documentCount == 0) return "";
+
         List<Document> docs = vectorStore.similaritySearch(
                 SearchRequest.builder().query(query).topK(5).build());
+
+        if(docs.isEmpty()) return ""; // 결과가 없으면 만환
         log.debug("문서갯수: {}", docs.size());  // ← 이렇게 해야 해요!
         return docs.stream()
                 .map(Document::getText)

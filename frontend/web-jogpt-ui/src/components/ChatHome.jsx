@@ -201,7 +201,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
         if (textareaRef.current) textareaRef.current.style.height = 'auto';
 
         try {
-            if (!showChatRef.current) { // ✅ ref로 즉시 체크
+            if (messages.length === 0) { // ✅ ref로 즉시 체크
                 await firstSend(myContent);
             } else {
                 await continueSend(myContent, showChatRef.current); // ✅ ref 값 사용
@@ -230,9 +230,9 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
             headers: {
                 'Content-Type': 'application/json',
                 'X-Model': selectedModel,
-                ...(customPrompt && {'X-Custom-Prompt': encodeURIComponent(customPrompt)}),
+
             },
-            body: JSON.stringify({myChatContents: myContent, files: attachedFiles})
+            body: JSON.stringify({myChatContents: myContent, files: attachedFiles, customPrompt: customPrompt})
         });
         if (!res.ok) throw new Error(`채팅방 생성 실패: ${res.status}`);
 
@@ -254,6 +254,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
             {myChatContents: myContent, showChatKey: chatKey}
         );
 
+
         await fetchGptResponse(myContent, selectedModel, chatKey);
     };
 
@@ -268,9 +269,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
 
     }
 
-    const saveDocument = async (myContent, chatKey) => {
 
-    }
 
     // // 문서에 있는지 확인
     const checkDocument = async (myContent) => {
@@ -309,10 +308,10 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
             headers: {
                 'Content-Type': 'application/json',
                 'X-Model': model,
-                ...(customPrompt && {'X-Custom-Prompt': encodeURIComponent(customPrompt)}),
+
             },
             // 제이슨 문자열로 변환
-            body: JSON.stringify({myChatContents: myContent, showChatKey: chatKey, files: attachedFiles})
+            body: JSON.stringify({myChatContents: myContent, showChatKey: chatKey, files: attachedFiles, customPrompt: customPrompt})
         });
         if (!res.ok) {
             setMessages(prev => [...prev, {role: 'ai', content: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'}]);
