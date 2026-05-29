@@ -67,6 +67,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
     // 입력 기록 저장용 ref (화면에 표시 안되므로 useRef 사용 → 스테일 클로저 방지)
     const inputHistoryRef = useRef([]);
     const historyIndexRef = useRef(-1);
+    const abortControllerRef = useRef(null); // 요청 취소용
 
     // 사용자가 위로 스크롤했는지 추적하는 ref
     const userScrolledUpRef = useRef(false);
@@ -170,11 +171,37 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
         e.target.style.height = 'auto';
         e.target.style.height = e.target.scrollHeight + 'px';
     };
+    const handleStop = () => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
+        clearInterval(streamIntervalRef.current);
+
+        setMessages(prev => {
+            const next = [...prev];
+            const last = next[next.length - 1];
+
+            if (last?.role === 'ai') {
+                // AI 메시지가 있으면 교체
+                next[next.length - 1] = { role: 'ai', content: '답변이 정지되었습니다.' };
+                return next;
+            } else {
+                // AI 메시지 없으면 추가
+                return [...next, { role: 'ai', content: '답변이 정지되었습니다.' }];
+            }
+        });
+        setLoading(false);
+        setLoadingStatus('');
+
+    };
+
 
 
     const handleSend = async () => {
         const query = input.trim();
         if (!query || loading) return;
+        abortControllerRef.current = new AbortController();
 
         // 전송할 때 기록 저장
         inputHistoryRef.current = [query, ...inputHistoryRef.current];
@@ -209,7 +236,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
             }
         } catch (e) {
             console.error(e);
-            setMessages(prev => [...prev, {role: 'ai', content: '오류가 발생했습니다.'}]);
+
         } finally {
             setLoading(false);
             setLoadingStatus('');
@@ -304,6 +331,8 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
             method: 'POST',
             // 서버의 토큰을 작동하게 하는 코드
             credentials: 'include',
+            signal: abortControllerRef.current?.signal, // 추가
+
             // json은 데이터 그 자체
             headers: {
                 'Content-Type': 'application/json',
@@ -330,6 +359,9 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
         };
 
         const gptText = await res.text();
+
+        if (!abortControllerRef.current) return;
+
         if (gptText) {
             let fullContent = gptText;
             let images = [];
@@ -639,10 +671,10 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
                                 </select>
                             </div>
                             <button
-                                className={messages.length > 0 ? 'search-real-hide' : 'search-btn search-real'}
-                                onClick={handleSend}
+                                className={loading ? 'search-btn search-stop' : (messages.length > 0 ? 'search-real-hide' : 'search-btn search-real')}
+                                onClick={loading ? handleStop : handleSend}
                             >
-                                <i className="fa fa-arrow-up"></i>
+                                <i className={loading ? 'fa fa-stop' : 'fa fa-arrow-up'}></i>
                             </button>
                         </div>
                     </div>
@@ -655,3 +687,5 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
         </div>
     );
 }
+
+

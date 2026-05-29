@@ -737,3 +737,34 @@ body {
         padding: 5px 20px 5px 9px;
     }
 }
+/* 정지 버튼 */
+.search-stop {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    place-items: center;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+.search-stop i {
+    color: #3A6BF5;
+    font-size: 20px;
+    border-radius: 3px;
+}
+.search-stop:hover {
+    background: rgba(58, 107, 245, 0.1);
+}
+
+
+
+
+
+
+
+

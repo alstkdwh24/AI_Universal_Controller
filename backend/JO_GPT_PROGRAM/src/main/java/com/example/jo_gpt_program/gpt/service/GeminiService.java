@@ -20,7 +20,10 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.content.Media;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
@@ -44,6 +47,8 @@ public class GeminiService {
     private final GptChatRepository gptChatRepository;
     private final ScholarSearchService scholarSearchService;
 
+    private final VectorStore vectorStore;
+
     private final KakaoMapService kakaoMapService;
     // ↓ 여기! 필드 선언부에 추가! 키워드
     private static final List<String> MAP_KEYWORDS = List.of(
@@ -62,7 +67,7 @@ public class GeminiService {
             "어디", "위치", "장소", "지도", "근처", "주변", "찾아줘", "알려줘"
     );
 
-    public GeminiService(ChatClient chatClient, ChatModel chatModel, ChatMemory chatMemory, RagService ragService, ShowChatRepository showChatRepository, GptChatRepository gptChatRepository, ScholarSearchService scholarSearchService, KakaoMapService kakaoMapService) {
+    public GeminiService(ChatClient chatClient, ChatModel chatModel, ChatMemory chatMemory, RagService ragService, ShowChatRepository showChatRepository, GptChatRepository gptChatRepository, ScholarSearchService scholarSearchService, VectorStore vectorStore, KakaoMapService kakaoMapService) {
         this.chatClient = chatClient;
         this.chatModel = chatModel;
         this.chatMemory = chatMemory;
@@ -70,6 +75,7 @@ public class GeminiService {
         this.showChatRepository = showChatRepository;
         this.gptChatRepository = gptChatRepository;
         this.scholarSearchService = scholarSearchService;
+        this.vectorStore = vectorStore;
         this.kakaoMapService = kakaoMapService;
     }
 
@@ -77,76 +83,47 @@ public class GeminiService {
         // 지도관련 프롬프트 명령어 작성
         String keywords = String.join(", ", MAP_KEYWORDS);
         String prompt = """
-                다음 문장에서 지도 검색에 사용할 장소명을 추출하세요.
-                
-                장소 유형 키워드:
-                """ + keywords + """
+                다음 문장에서 지도 검색할 장소명을 추출하세요.
+                장소 유형 키워드: %s
                 
                 규칙:
-                1. 지역명 + 장소유형이면 → 둘 다 반환
-                   예) "홍대 카페 찾아줘"   → 홍대 카페
-                   예) "강남역 맛집 알려줘" → 강남역 맛집
+                1. 지역명 + 장소유형 → 둘 다 반환  (예: 홍대 카페)
+                2. 장소명만 있으면 → 그대로 반환  (예: 스타벅스)
+                3. 장소유형만 있으면 → CURRENT_LOCATION:장소유형  (예: CURRENT_LOCATION:카페)
+                4. 특정 불가 → NONE
+                5. 특정 지역/역 언급 시 → 반드시 그 지역 장소만 반환
+                6. 조사/어미(에서, 의, 으로, 쪽 등) 제거, 행정구역(시/구/동)은 유지
                 
-                2. 장소명만 있으면 → 그대로 반환
-                   예) "스타벅스 찾아줘"    → 스타벅스
-                   예) "경복궁 알려줘"      → 경복궁
-                
-                3. 장소유형만 있으면 → CURRENT_LOCATION 반환
-                   예) "근처 카페 알려줘"   → CURRENT_LOCATION:카페
-                   예) "주변 맛집 찾아줘"   → CURRENT_LOCATION:맛집
-                   예) "편의점 어디야"      → CURRENT_LOCATION:편의점
-                
-                4. 장소 특정 불가능 → NONE 반환
-                   예) "오늘 날씨 어때"     → NONE
-                5. 사용자가 특정 지역명이나 역명 등을 언급하면 반드시 그 지역 or 역 근처에 있는 장소만 검색하고 추천해줘
-                    다른 지역 장소는 절대 포함하지마
-                
-                6. 직접 장소를 언급하진 않았지만
-                   문맥상 장소와 관련된 키워드가 있으면
-                   → CURRENT_LOCATION:추출한 장소유형
-                
-                   예) "치킨 먹으러 갈 만한 곳"  → CURRENT_LOCATION:치킨집
-                   예) "데이트 코스 추천해줘"     → CURRENT_LOCATION:데이트코스
-                   예) "주말에 어디 가면 좋을까"  → CURRENT_LOCATION:관광지
-                        6. 조사/어미 제거 규칙:
-                           장소명 뒤에 붙는 아래 조사/어미는 반드시 제거하고 순수 장소명만 반환하세요.
-                           제거 대상: 에, 에서, 에서는, 에서도, 의, 에는, 에도,
-                                      로, 으로, 로는, 으로는, 로부터, 으로부터,
-                                      쪽, 쪽으로, 방면, 방향,
-                                      이랑, 랑, 와, 과, 보다, 처럼, 같은
-                
-                           행정구역 단위는 유지하세요 (시, 구, 동, 읍, 면, 군):
-                           예) "시흥시에 맛집"    → 시흥시 맛집  (시흥시는 유지!)
-                           예) "강남구에서 카페"  → 강남구 카페
-                           예) "홍대에서 맛집"    → 홍대 맛집
-                           예) "제주도의 카페"    → 제주도 카페
-                           예) "부산으로 여행"    → CURRENT_LOCATION:관광지  (장소유형 불명확)
-                           예) "신촌 쪽 맛집"    → 신촌 맛집
-                           예) "인천 방면 카페"   → 인천 카페
-                
-                추출한 결과만 반환하고 다른 말은 절대 하지 마세요.
-                
-                문장:
-                """ + userMessage;
+                결과만 반환, 설명 금지.
+                문장: %s
+                """.formatted(keywords, userMessage);
 
         try {
-            // 이미지 모델 컨텍스트와 독립된 새 클라이언트 생성
-            ChatClient independentClient = ChatClient.builder(chatModel).build();
-            String result = independentClient.prompt()
-                    .options(GoogleGenAiChatOptions.builder()
-                            .maxOutputTokens(200)
-                            .build())
-                    .user(prompt)
-                    .call()
-                    .content();
+            // 모델 호출
+            String result = this.ModelCall(chatModel, prompt);
+            // 모델 컨텍스트와 독립된 새 클라이언트 생성
             if (result == null) return "NONE";
             // 따옴표, 콜론, 대괄호 등 특수문자 제거
             String cleaned = result.trim().replaceAll("[\"':\\[\\]]", "").trim();
             return cleaned.isEmpty() ? "NONE" : cleaned;
+
         } catch (Exception e) {
             log.error("[extractLocationWithAI] AI 추출 실패: {}", e.getMessage());
             return "NONE";
         }
+    }
+
+    //  모델 호출
+    private String ModelCall(ChatModel chatModel, String prompt) {
+        ChatClient independentClient = ChatClient.builder(chatModel).build();
+        return independentClient.prompt()
+                .options(GoogleGenAiChatOptions.builder()
+                        .maxOutputTokens(200)
+                        .build())
+                .user(prompt)
+                .call()
+                .content();
+
     }
 
     // MAP_KEYWORDS 선언 아래, extractLocationWithAI() 위에 추가!
@@ -156,28 +133,23 @@ public class GeminiService {
     }
 
     public String sendGeminiAI(MyChatDTO dto, String model, String customPrompt) {
-        UserMessage message;
-        if (dto.getFiles() != null && !dto.getFiles().isEmpty()) {
-            List<Media> mediaList = dto.getFiles().stream()
-                    .filter(f -> f.getMimeType() != null)
-                    .map(f -> new Media(MimeTypeUtils.parseMimeType(f.getMimeType()),
-                            new ByteArrayResource(Base64.getDecoder().decode(f.getData()))))
-                    .toList();
-            message = UserMessage.builder()
-                    .text(dto.getMyChatContents())
-                    .media(mediaList)
-                    .build();
-        } else {
-            message = UserMessage.builder()
-                    .text(dto.getMyChatContents())
-                    .build();
-        }
+        // 우저 메시지 생성
+        UserMessage message = this.userMessageGet(dto);
+
         // 앱 검색
         String webResults = scholarSearchService.searchWithTavily(dto.getMyChatContents());
-        String ragResult = ragService.findDocument(dto.getMyChatContents());
+
+        // customPrompt에 이미 RAG 결과가 있으면 중복 호출 안 함
+        String ragResult = (customPrompt != null && !customPrompt.isBlank())
+                ? ""
+                : ragService.findDocument(dto.getMyChatContents()); // 힌트
+        // 시스템 프롬프트
         String systemPrompt = getString(customPrompt, webResults, ragResult);
+        // showChatKey 스트링으로 저장
         String conversationId = dto.getShowChatKey() != null ? dto.getShowChatKey().toString() : null;
+        // 메시지 내역 저장
         List<Message> history = conversationId != null ? chatMemory.get(conversationId) : List.of();
+
         log.info("[DEBUG] conversationId={}, historySize={}", conversationId, history.size());
         history.forEach(msg -> log.info("[DEBUG] history msg - type={}, text={}", msg.getMessageType(), msg.getText()));
 
@@ -185,27 +157,41 @@ public class GeminiService {
             return sendGeminiImageDirect(dto.getMyChatContents(), dto.getFiles(), model, systemPrompt,
                     dto.getShowChatKey(), conversationId, history, message, ragResult);
         }
+        // 메시지 받기
+        String response = this.sendMessage(history, message, model, systemPrompt);
 
-        List<Message> allMessages = new ArrayList<>(history);
-        allMessages.add(message);
-
-        GoogleGenAiChatOptions options = GoogleGenAiChatOptions.builder()
-                .model(model)
-                .temperature(0.7)
-                .maxOutputTokens(6024)
-                .topP(0.9)
-                .topK(100)
-                .build();
-
-        String response = chatClient.prompt()
-                .system(systemPrompt)
-                .messages(allMessages)
-                .options(options)
-                .call()
-                .content();
 
         log.info("[LLM 원본 응답] response={}", response);
+        // 위도 구하는 메서드
+        response = this.mapLoad(dto, response, conversationId, message);
+        // 메모리 저장
+        response = this.saveResult(conversationId, message, response, dto.getShowChatKey());
+        // 문서 저장
+        saveToVectorStore(ragResult, response);
 
+        return response;
+    }
+
+    private String saveResult(String conversationId, UserMessage message, String response, Long showChatKey) {
+        if (response == null || conversationId == null) {
+            log.warn("[saveResult] 응답이 null이거나 conversationId가 없습니다.");
+            return response;
+        }
+        chatMemory.add(conversationId, message);
+        String cleanResponse = response.replaceAll("\\[\\[MAP_START:.*?:MAP_END\\]\\]", "").trim();
+        chatMemory.add(conversationId, new AssistantMessage(cleanResponse));
+        GptChat gptChat = GptChat.builder()
+                .gptChatContents(response)
+                .showChat(showChatRepository.findById(showChatKey).orElse(null))
+                .build();
+        gptChatRepository.save(gptChat);
+        log.info("[saveResult] 응답 길이={}", response.length());
+        return response;
+    }
+
+
+    // 지도 위도 구하는 것
+    private String mapLoad(MyChatDTO dto, String response, String conversationId, UserMessage message) {
         // 장소 키워드 감지 → 지도 좌표 붙이기
         if (isMapRequest(dto.getMyChatContents())) {
             String location = extractLocationWithAI(dto.getMyChatContents()); // ① AI로 장소명 추출
@@ -228,23 +214,46 @@ public class GeminiService {
                 }
             }
         }
-        if (response != null && conversationId != null) {
-            chatMemory.add(conversationId, message);
-            // MAP 태그 제거 후 memory 저장 (히스토리에 [[MAP:...]] 남으면 다음 응답에 중복 생성됨)
-            String cleanResponse = response.replaceAll("\\[\\[MAP_START:.*?:MAP_END\\]\\]", "").trim();
-            chatMemory.add(conversationId, new AssistantMessage(cleanResponse));
-            GptChat gptChat = GptChat.builder()
-                    .gptChatContents(response)
-                    .showChat(showChatRepository.findById(dto.getShowChatKey()).orElse(null))
-                    .build();
-            gptChatRepository.save(gptChat);
-            log.info("[sendGeminiAI] 응답 길이={}", response.length());
-        } else {
-            log.warn("[sendGeminiAI] 응답이 null이거나 conversationId가 없습니다.");
-        }
-        saveToVectorStore(ragResult, response);
-
         return response;
+
+    }
+    // gpt에 메시지 보내는 것
+    private String sendMessage(List<Message> history, UserMessage message, String model, String systemPrompt) {
+        List<Message> allMessages = new ArrayList<>(history);
+        allMessages.add(message);
+
+        GoogleGenAiChatOptions options = GoogleGenAiChatOptions.builder()
+                .model(model)
+                .temperature(0.7)
+                .maxOutputTokens(6024)
+                .topP(0.9)
+                .topK(100)
+                .build();
+
+        return chatClient.prompt()
+                .system(systemPrompt)
+                .messages(allMessages)
+                .options(options)
+                .call()
+                .content();
+    }
+    // 사용자 메시지 담는 메서드
+    private UserMessage userMessageGet(MyChatDTO dto) {
+        if (dto.getFiles() != null && !dto.getFiles().isEmpty()) {
+            List<Media> mediaList = dto.getFiles().stream()
+                    .filter(f -> f.getMimeType() != null)
+                    .map(f -> new Media(MimeTypeUtils.parseMimeType(f.getMimeType()),
+                            new ByteArrayResource(Base64.getDecoder().decode(f.getData()))))
+                    .toList();
+            return UserMessage.builder()
+                    .text(dto.getMyChatContents())
+                    .media(mediaList)
+                    .build();
+        } else {
+            return UserMessage.builder()
+                    .text(dto.getMyChatContents())
+                    .build();
+        }
     }
 
     private static @NonNull String getString(String customPrompt, String webResults, String ragResult) {
@@ -265,7 +274,7 @@ public class GeminiService {
                 웹 검색 결과가 없으면 학습 데이터 기준으로 답변하되,
                 "정확한 최신 정보는 직접 확인이 필요합니다."라고 꼭 덧붙이세요.
                 """.formatted(today);
-        return webResults.isBlank() ? ragResult.isBlank() ? basePrompt + datePrompt : ragResult + basePrompt + datePrompt : ragResult.isBlank()?  basePrompt + datePrompt + webResults : basePrompt + datePrompt + webResults + ragResult;
+        return webResults.isBlank() ? ragResult.isBlank() ? basePrompt + datePrompt : ragResult + basePrompt + datePrompt : ragResult.isBlank() ? basePrompt + datePrompt + webResults : basePrompt + datePrompt + webResults + ragResult;
     }
 
     private String sendGeminiImageDirect(String userMessage, List<MyChatDTO.FilePartDTO> files, String model,
@@ -355,7 +364,7 @@ public class GeminiService {
                 .showChat(showChat)
                 .build();
         gptChatRepository.save(gptChat);
-        saveToVectorStore( ragResult, cleanTextContent);
+        saveToVectorStore(ragResult, cleanTextContent);
 
         if (!images.isEmpty()) {
             Map<String, Object> result = new LinkedHashMap<>();
@@ -373,15 +382,27 @@ public class GeminiService {
     }
 
     // 벡터 db에 저장 로직
-    private void saveToVectorStore( String ragResult, String llmAnswer){
+    private void saveToVectorStore(String ragResult, String llmAnswer) {
         log.info("[saveToVectorStore 호출됨] ...");
         log.info("llmAnswer={}", llmAnswer);
         log.info("ragResult={}", ragResult);
 
-            String context =
-                    ragResult.isBlank() ? llmAnswer : "\n\n[RAG 검색 결과]\n" + ragResult
-                            + "\n\n[AI 답변]\n" + llmAnswer;
 
+        List<Document> existing = vectorStore.similaritySearch(
+                SearchRequest.builder()
+                        .query(llmAnswer)
+                        .topK(1)
+                        .similarityThreshold(0.9)
+                        .build()
+        );
+
+        if (!existing.isEmpty()) {
+            log.info("[saveToVectorStore] 유사 문서 이미 존재 → 저장 생략");
+            return;
+        }
+        String context =
+                ragResult.isBlank() ? llmAnswer : "\n\n[RAG 검색 결과]\n" + ragResult
+                        + "\n\n[AI 답변]\n" + llmAnswer;
 
 
         log.info("context{}", context);

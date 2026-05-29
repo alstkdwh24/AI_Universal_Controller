@@ -165,6 +165,8 @@ public class ScholarSearchService {
                 SearchRequest.builder()
                         .query(dto.getMyChatContents())
                         .topK(3) // 유사한 문서 3개만
+                        .similarityThreshold(0.9) // 90% 이상 유사하면 중복으로 판단
+
                         .build());
         // 문서들을 하나의 문자열로 합치기
         String ragContext = docs.stream()
