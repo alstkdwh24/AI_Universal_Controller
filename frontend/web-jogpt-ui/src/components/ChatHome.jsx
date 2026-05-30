@@ -410,6 +410,16 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
     const handleGptResponseText = async (gptText, chatKey) => {
         if (!gptText) return;
         let fullContent = gptText;
+        // Google 연동 안 됐을 때 연동 안내
+        if (fullContent.trim() === "GOOGLE_NOT_CONNECTED") {
+            setMessages(prev => [...prev, {
+                role: "ai",
+                content: "🔗 **Google 계정이 연동되지 않았어요!**\n\n메일·캘린더 기능을 사용하려면 Google 계정을 연동해주세요.",
+                showGoogleConnect: true
+            }]);
+            return;
+        }
+
         let images = [];
         try {
             const parsed = JSON.parse(gptText);
@@ -556,6 +566,14 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
                                                 ))
                                         }}
                                     />
+                                )}
+                                {msg.showGoogleConnect && (
+                                    <button
+                                        className="google-connect-btn"
+                                        onClick={() => window.location.href = CONFIG.AI_MEMBERSECURITY + "/connect/google"}
+                                    >
+                                        🔗 Google 계정 연동하기
+                                    </button>
                                 )}
                                 {msg.content && msg.content.includes('[[MAP_START:') && !msg.streaming && (
                                     <KakaoMap places={(() => {
