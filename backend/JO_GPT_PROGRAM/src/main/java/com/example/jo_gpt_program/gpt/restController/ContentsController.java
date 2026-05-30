@@ -8,6 +8,7 @@ import com.example.jo_gpt_program.gpt.dto.MyChatDTO;
 import com.example.jo_gpt_program.gpt.dto.SaveDocumentDTO;
 import com.example.jo_gpt_program.gpt.dto.ShowChatDTO;
 import com.example.jo_gpt_program.gpt.service.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -35,19 +36,21 @@ public class ContentsController {
     private final MyAuthService myAuthService;
 
     private final GeminiService geminiService;
+    private final GoogleApiService googleApiService;
     private final RagService ragService;
     private final ScholarSearchService scholarSearchService;
     private final ChatMysqlService chatMysqlService;
 
     // static 메서드 사용 시, 생성자 사용 불가
-    public ContentsController( @Value("${spring.llm.key}") String geminiKey,
-                              ShowChatService showChatService, MyAuthService myAuthService, GeminiService geminiService, RagService ragService, ScholarSearchService scholarSearchService, ChatMysqlService chatMysqlService) {
+    public ContentsController(@Value("${spring.llm.key}") String geminiKey,
+                              ShowChatService showChatService, MyAuthService myAuthService, GeminiService geminiService, GoogleApiService googleApiService, RagService ragService, ScholarSearchService scholarSearchService, ChatMysqlService chatMysqlService) {
 
         this.geminiKey = geminiKey;
         this.showChatService = showChatService;
 
         this.myAuthService = myAuthService;
         this.geminiService = geminiService;
+        this.googleApiService = googleApiService;
         this.ragService = ragService;
         this.scholarSearchService = scholarSearchService;
         this.chatMysqlService = chatMysqlService;

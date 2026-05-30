@@ -88,6 +88,8 @@ dependencies {
     implementation 'com.google.apis:google-api-services-youtube:v3-rev20230816-2.0.0'
 
     implementation project(':EntityCom')
+    // 메일 첨부파일 (MIME)
+    implementation 'com.sun.mail:jakarta.mail:2.0.1'
 }
 tasks.named('test') {
     useJUnitPlatform()

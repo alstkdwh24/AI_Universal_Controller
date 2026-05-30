@@ -46,12 +46,12 @@ public class GeminiService {
     private final GptChatRepository gptChatRepository;
     private final ScholarSearchService scholarSearchService;
 
+
     private final VectorStore vectorStore;
 
     private final KakaoMapService kakaoMapService;
-    private final CalendarService calendarService;
-    private final GmailService gmailService;
-    private final YouTubeSummaryService youtubeSummaryService;
+    private final GoogleService googleService;
+
 
     private static final List<String> MAP_KEYWORDS = List.of(
             "카페", "커피숍", "커피전문점", "맛집", "식당", "음식점", "레스토랑", "한식당",
@@ -69,7 +69,7 @@ public class GeminiService {
             "어디", "위치", "장소", "지도", "근처", "주변", "찾아줘", "알려줘"
     );
 
-    public GeminiService(ChatClient chatClient, ChatModel chatModel, ChatMemory chatMemory, RagService ragService, ShowChatRepository showChatRepository, GptChatRepository gptChatRepository, ScholarSearchService scholarSearchService, VectorStore vectorStore, KakaoMapService kakaoMapService, CalendarService calendarService, GmailService gmailService, YouTubeSummaryService youtubeSummaryService, com.example.jo_gpt_program.gpt.repository.jpa.ConnectedAccountsRepository connectedAccountsRepository) {
+    public GeminiService(ChatClient chatClient, ChatModel chatModel, ChatMemory chatMemory, RagService ragService, ShowChatRepository showChatRepository, GptChatRepository gptChatRepository, ScholarSearchService scholarSearchService, VectorStore vectorStore, KakaoMapService kakaoMapService, GoogleService googleService) {
         this.chatClient = chatClient;
         this.chatModel = chatModel;
         this.chatMemory = chatMemory;
@@ -79,9 +79,8 @@ public class GeminiService {
         this.scholarSearchService = scholarSearchService;
         this.vectorStore = vectorStore;
         this.kakaoMapService = kakaoMapService;
-        this.calendarService = calendarService;
-        this.gmailService = gmailService;
-        this.youtubeSummaryService = youtubeSummaryService;
+
+        this.googleService = googleService;
     }
 
     private String extractLocationWithAI(String userMessage) {
@@ -113,6 +112,7 @@ public class GeminiService {
         }
     }
 
+    // llm 모델과 설정 가져오기
     private String modelCall(ChatModel chatModel, String prompt) {
         ChatClient independentClient = ChatClient.builder(chatModel).build();
         return independentClient.prompt()
@@ -124,13 +124,14 @@ public class GeminiService {
                 .content();
     }
 
+    // 키워드가 포함되면 작동
     private boolean isMapRequest(String message) {
         return MAP_KEYWORDS.stream().anyMatch(message::contains);
     }
 
     public String sendGeminiAI(MyChatDTO dto, String model, String customPrompt, Long memberKey) {
         if (memberKey != null) {
-            String googleResult = handleGoogleAction(dto.getMyChatContents(), memberKey);
+            String googleResult = googleService.handleGoogleAction(dto.getMyChatContents(), memberKey, dto.getFiles(), dto.getFiles());
             if (googleResult != null) return googleResult;
         }
         UserMessage message = this.userMessageGet(dto);
@@ -367,107 +368,5 @@ public class GeminiService {
         ragService.saveDocument(context, "chat", "대화");
     }
 
-    private String handleGoogleAction(String userMessage, Long memberKey) {
 
-        // 유튜브 요약
-        if ((userMessage.contains("유튜브") || userMessage.contains("youtube.com") || userMessage.contains("youtu.be")) &&
-                userMessage.contains("요약")) {
-            try {
-                String url = extractUrl(userMessage);
-                if (url != null) return youtubeSummaryService.summarize(url);
-            } catch (Exception e) {
-                log.error("[handleGoogleAction] 유튜브 요약 실패: {}", e.getMessage());
-                return "유튜브 요약 중 오류가 발생했어요.";
-            }
-        }
-
-        // 최근 메일 조회
-        if ((userMessage.contains("메일") || userMessage.contains("이메일")) &&
-                (userMessage.contains("읽어") || userMessage.contains("조회") || userMessage.contains("알려") || userMessage.contains("보여") || userMessage.contains("최근") || userMessage.contains("왔어") || userMessage.contains("확인"))) {
-            try {
-                List<String> emails = gmailService.getRecentEmails(memberKey);
-                if (emails.isEmpty()) return "최근 메일이 없어요!";
-                StringBuilder sb = new StringBuilder("📬 최근 메일 목록이에요!\n\n");
-                for (int i = 0; i < emails.size(); i++) {
-                    sb.append(i + 1).append(". ").append(emails.get(i)).append("\n");
-                }
-                return sb.toString();
-            } catch (Exception e) {
-                log.error("[handleGoogleAction] 메일 조회 실패: {}", e.getMessage());
-                return "메일 조회 중 오류가 발생했어요: " + e.getMessage();
-            }
-        }
-
-        // 메일 발송
-        if (userMessage.contains("메일") || userMessage.contains("이메일") || userMessage.contains("mail")) {
-            try {
-                String extractPrompt = "사용자 메시지에서 이메일 정보를 추출하세요.\n" +
-                        "형식: 이메일주소|제목|내용\n" +
-                        "반드시 위 형식으로만 답해. | 기호는 정확히 2개여야 해.\n" +
-                        "사용자 메시지: " + userMessage;
-
-                String extracted = modelCall(chatModel, extractPrompt);
-                String[] parts = extracted.trim().split("\\|");
-                if (parts.length < 3) {
-                    log.error("[handleGoogleAction] 메일 파싱 실패: {}", extracted);
-                    return "메일 정보를 파악하지 못했어요.\n예시: \"hong@gmail.com 에게 제목: 안녕 내용: 반가워 라고 메일 보내줘\"";
-                }
-                gmailService.sendEmail(memberKey, parts[0].trim(), parts[1].trim(), parts[2].trim());
-                return "✅ 메일을 발송했어요!\n받는 사람: " + parts[0].trim() + "\n제목: " + parts[1].trim();
-            } catch (Exception e) {
-                log.error("[handleGoogleAction] 메일 발송 실패: {}", e.getMessage());
-                return "메일 발송 중 오류가 발생했어요: " + e.getMessage();
-            }
-        }
-
-        // 캘린더 일정 조회
-        if (userMessage.contains("일정") && (userMessage.contains("알려") || userMessage.contains("조회") || userMessage.contains("보여") || userMessage.contains("뭐야") || userMessage.contains("뭐있"))) {
-            try {
-                List<String> events = calendarService.getEvents(memberKey);
-                if (events.isEmpty()) return "등록된 일정이 없어요!";
-                StringBuilder sb = new StringBuilder("📅 가까운 일정이에요!\n\n");
-                for (int i = 0; i < events.size(); i++) {
-                    sb.append(i + 1).append(". ").append(events.get(i)).append("\n");
-                }
-                return sb.toString();
-            } catch (Exception e) {
-                log.error("[handleGoogleAction] 캘린더 조회 실패: {}", e.getMessage());
-                return "캘린더 조회 중 오류가 발생했어요: " + e.getMessage();
-            }
-        }
-
-        // 캘린더 일정 추가
-        if (userMessage.contains("일정") && (userMessage.contains("추가") || userMessage.contains("등록") || userMessage.contains("만들어") || userMessage.contains("넣어"))) {
-            try {
-                String extractPrompt = "사용자 메시지에서 일정 정보를 추출하세요.\n" +
-                        "형식: 제목|시작시간|종료시간\n" +
-                        "시간 형식은 반드시 ISO 8601 형식으로: 예) 2025-06-01T09:00:00+09:00\n" +
-                        "반드시 위 형식으로만 답해. | 기호는 정확히 2개여야 해.\n" +
-                        "사용자 메시지: " + userMessage;
-                String extracted = modelCall(chatModel, extractPrompt);
-                String[] parts = extracted.trim().split("\\|");
-                if (parts.length < 3) {
-                    log.error("[handleGoogleAction] 일정 파싱 실패: {}", extracted);
-                    return "일정 정보를 파악하지 못했어요.\n예시: \"내일 오전 10시에 팀 미팅 일정 추가해줘\"";
-                }
-                calendarService.createEvent(memberKey, parts[0].trim(), parts[1].trim(), parts[2].trim());
-                return "✅ 일정을 추가했어요!\n제목: " + parts[0].trim() + "\n시작: " + parts[1].trim();
-            } catch (Exception e) {
-                log.error("[handleGoogleAction] 일정 추가 실패: {}", e.getMessage());
-                return "일정 추가 중 오류가 발생했어요: " + e.getMessage();
-            }
-        }
-
-        return null;
-    }
-
-    private String extractUrl(String message) {
-        String[] words = message.split("\\s+");
-        for (String word : words) {
-            if (word.startsWith("http://") || word.startsWith("https://")) {
-                return word;
-            }
-        }
-        return null;
-    }
 }

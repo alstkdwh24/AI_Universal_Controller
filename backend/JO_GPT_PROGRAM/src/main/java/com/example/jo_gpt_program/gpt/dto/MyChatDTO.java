@@ -1,14 +1,13 @@
 package com.example.jo_gpt_program.gpt.dto;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @AllArgsConstructor
@@ -23,7 +22,7 @@ public class MyChatDTO {
     private Long showChatKey;
     private List<FilePartDTO> files;
     private String customPrompt; // ✅ X-Custom-Prompt 헤더 대신 body로 받기
-
+    @Getter
     public static class FilePartDTO {
         private String name;
         private String mimeType;
