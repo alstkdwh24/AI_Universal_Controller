@@ -43,7 +43,14 @@ public class GeminiRestEmbeddingModel implements EmbeddingModel {
         try {
             List<Embedding> results = new ArrayList<>();
             for (int i = 0; i < texts.size(); i++) {
-                float[] vector = embedSingle(texts.get(i));
+                String text = texts.get(i);
+                // ✅ 빈 값이면 임베딩 건너뜀
+                if (text == null || text.isBlank()) {
+                    log.warn("[GeminiRestEmbeddingModel] 빈 텍스트 건너뜀 index={}", i);
+                    results.add(new Embedding(new float[dimensions()], i));
+                    continue;
+                }
+                float[] vector = embedSingle(text);
                 results.add(new Embedding(vector, i));
             }
             return new EmbeddingResponse(results);
@@ -113,3 +120,4 @@ public class GeminiRestEmbeddingModel implements EmbeddingModel {
         return 3072;
     }
 }
+

@@ -12,7 +12,6 @@ import java.util.Set;
 @Repository
 public interface ShowChatRepository extends JpaRepository<ShowChat, Long> {
 
-    Optional<Object> findShowChatByMembers(Members members);
 
     Set<ShowChat> findByMembers(@Param("members") Members members);
 

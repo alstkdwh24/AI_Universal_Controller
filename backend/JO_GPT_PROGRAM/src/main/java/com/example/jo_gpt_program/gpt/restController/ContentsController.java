@@ -52,25 +52,42 @@ public class ContentsController {
         this.scholarSearchService = scholarSearchService;
         this.chatMysqlService = chatMysqlService;
     }
-
+    // 나의 메시지를 llm에 보내고 db에 저장하는 메서드
     @PostMapping("/myContents")
-    public ResponseEntity<String> getMyContents(@RequestBody MyChatDTO dto  ) {
+    public ResponseEntity<String> getMyContents(@RequestBody MyChatDTO dto) {
+        // Object 객체 생성
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (!(principal instanceof UserInfoDto userInfo)) {
             return ResponseEntity.status(401).build();
         }
+        // memberKey 키를 반환
         Long memberKey = Long.parseLong(userInfo.getMemberId());
 
+        // mysql 만들기
         String success = chatMysqlService.userInfo(memberKey, dto);
         return ResponseEntity.ok(success);
+    }
+    private Long getMemberKey() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        // 현재 서버 메모리에 저장된 보안 정보 창고
+        // getContext() 현재 요청의 보안 컨텍스트 꺼내기
+        // getAuthentication()  인증 정보 꺼내기
+        // getPrincipal() 그 중에서 누구인지 꺼내기
+        if (principal instanceof UserInfoDto userInfo) {
+            return Long.parseLong(userInfo.getMemberId());
+        }
+        return null;
     }
 
     /* Gemini 호출 — Authorization으로 멤버 식별, DB의 활성 프롬프트 자동 적용 */
     @PostMapping("/gptContents")
     public ResponseEntity<String> getGptContents(@RequestBody MyChatDTO dto,
                                                  @RequestHeader(value = "X-Model", defaultValue = "gemini-2.0-flash") String model) {
-        // ✅ customPrompt를 헤더 대신 body(dto)에서 꺼냄 → 헤더 크기 초과 문제 해결
-        String response = geminiService.sendGeminiAI(dto, model, dto.getCustomPrompt());
+
+
+        Long memberKey = getMemberKey();
+        //  customPrompt를 헤더 대신 body(dto)에서 꺼냄 → 헤더 크기 초과 문제 해결
+        String response = geminiService.sendGeminiAI(dto, model, dto.getCustomPrompt(), memberKey);
         return ResponseEntity.ok(response);
     }
 
@@ -88,8 +105,8 @@ public class ContentsController {
         // 2. DTO에 채팅방 키 세팅
         dto.setShowChatKey(showChatKey);
 
-        // 3. AI 응답 요청 (✅ customPrompt를 헤더 대신 body(dto)에서 꺼냄)
-        String response = geminiService.sendGeminiAI(dto, model, dto.getCustomPrompt());
+        // 3. AI 응답 요청 ( customPrompt를 헤더 대신 body(dto)에서 꺼냄)
+        String response = geminiService.sendGeminiAI(dto, model, dto.getCustomPrompt(), getMemberKey());
 
         // 4. 채팅방 키 + AI 응답 한번에 반환
         return ResponseEntity.ok(Map.of(
@@ -164,7 +181,7 @@ public class ContentsController {
         ragService.saveDocument(dto.getContext(), dto.getSource(), dto.getCategory());
         return ResponseEntity.ok().build();
     }
-
+    // 문서 찾는 로직
     @PostMapping("/documents/search")
     public ResponseEntity<String> findDocument(@RequestBody Map<String, String> body){
         try {
@@ -199,3 +216,4 @@ public class ContentsController {
         }
     }
 }
+

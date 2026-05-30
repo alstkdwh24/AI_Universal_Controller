@@ -21,8 +21,8 @@ configurations {
 }
 
 // 여기에 ai mavenBom 추가
-dependencyManagement{
-    imports{
+dependencyManagement {
+    imports {
         mavenBom "org.springframework.ai:spring-ai-bom:1.1.5"
     }
 }
@@ -77,6 +77,15 @@ dependencies {
     // HTML을 읽고 파싱하는 라이브러리
     implementation 'org.jsoup:jsoup:1.17.2'
 
+// Google API
+    implementation 'com.google.api-client:google-api-client:2.2.0'
+    implementation 'com.google.auth:google-auth-library-oauth2-http:1.19.0'
+    implementation 'com.google.apis:google-api-services-gmail:v1-rev20220404-2.0.0'
+    implementation 'com.google.apis:google-api-services-calendar:v3-rev20220715-2.0.0'
+    implementation 'com.google.apis:google-api-services-sheets:v4-rev20220927-2.0.0'
+    implementation 'com.google.apis:google-api-services-docs:v1-rev20220609-2.0.0'
+    implementation 'com.google.apis:google-api-services-drive:v3-rev20220815-2.0.0'
+    implementation 'com.google.apis:google-api-services-youtube:v3-rev20230816-2.0.0'
 
     implementation project(':EntityCom')
 }

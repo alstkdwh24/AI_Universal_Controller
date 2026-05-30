@@ -59,6 +59,9 @@
     line-height: 1.6;
     /* 폰트 크기의 1.6배 간격 (가장 추천하는 가독성 범위: 1.5 ~ 1.8) */
     color: #101D42;
+    max-width: 80%;
+    word-break: break-word;
+    overflow-wrap: break-word;
 
 }
 
@@ -70,6 +73,8 @@
     width: 100%;
     justify-content: flex-start;
     margin-bottom: 20px;
+    overflow: hidden;
+    box-sizing: border-box;
     /* 단락 아래에 20px만큼 공간을 만듭니다 */
 
 }
@@ -82,6 +87,9 @@
     /* 폰트 크기의 1.6배 간격 (가장 추천하는 가독성 범위: 1.5 ~ 1.8) */
     color: #0F172A;
     /* 기존 white → 다크 네이비 그레이로 변경 */
+    max-width: 100%;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 /* Gemini 스타일 로딩 */
@@ -259,7 +267,8 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    height: 80%;
+    flex: 1;
+    min-height: 0;
     width: 44rem;
     gap: 1rem;
     overflow-y: auto;

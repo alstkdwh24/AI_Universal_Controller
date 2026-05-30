@@ -168,8 +168,10 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
 
     const handleInput = (e) => {
         setInput(e.target.value);
-        e.target.style.height = 'auto';
-        e.target.style.height = e.target.scrollHeight + 'px';
+        const el = e.target;
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
+        // overflow-y 는 CSS max-height: 150px + overflow-y: auto 가 처리
     };
     const handleStop = () => {
         if (abortControllerRef.current) {
@@ -545,6 +547,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
                                     <div
                                         id="realGeminiContent"
                                         className={msg.streaming ? 'streaming-cursor' : ''}
+                                        style={{wordBreak: 'break-word', overflowWrap: 'break-word', width: '100%'}}
                                         dangerouslySetInnerHTML={{
                                             __html: DOMPurify.sanitize(
                                                 marked.parse(

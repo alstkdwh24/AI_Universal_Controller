@@ -78,6 +78,10 @@ export default function App() {
         if (urlParams.has('error')) {
             setShowLogin(true);
         }
+        // ✅ 구글 연동 완료 시 설정 화면 자동으로 열기
+        if (urlParams.get('connected') === 'google') {
+            setCurrentView('settings');
+        }
         window.history.replaceState({}, '', '/'); // URL에서 쿼리 제거
 
         fetchMyInfo();

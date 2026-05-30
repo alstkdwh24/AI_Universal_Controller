@@ -2,6 +2,7 @@ package com.example.entitycom.entity.member;
 
 import com.example.entitycom.converter.AesEncryptConverter;
 import com.example.entitycom.entity.chat.ShowChat;
+import com.example.entitycom.entity.connect.ConnectedAccounts;
 import com.example.entitycom.entity.device.Devices;
 import com.example.entitycom.entity.gpt.GPT;
 import com.example.entitycom.entity.gpt.GPTSessions;
@@ -91,6 +92,9 @@ public class Members {
     @OneToMany(mappedBy = "members", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ShowChat> showChatList = new ArrayList<>();
 
+    // Members.java 에 추가
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ConnectedAccounts> connectedAccounts = new ArrayList<>();
 
     public void changeMemberId(String memberId) {
         if (memberId != null && !memberId.isEmpty()) {

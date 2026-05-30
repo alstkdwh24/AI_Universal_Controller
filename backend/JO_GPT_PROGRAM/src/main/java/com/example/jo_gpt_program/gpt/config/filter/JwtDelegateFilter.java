@@ -30,11 +30,17 @@ public class JwtDelegateFilter extends OncePerRequestFilter {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    // ✅ /connect/** 경로는 토큰 검증 건너뜀
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.startsWith("/connect/");
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String refreshToken = null;
-        // 쿠키에서 ACCESS_TOKEN 추출
         String token = null;
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
@@ -44,15 +50,11 @@ public class JwtDelegateFilter extends OncePerRequestFilter {
                     break;
                 }
                 if ("REFRESH_TOKEN".equals(cookie.getName())) {
-                    refreshToken = cookie.getValue();  // ← 같이 읽기!
+                    refreshToken = cookie.getValue();
                 }
             }
         }
 
-
-
-        // ✅ RestTemplate 대신 HttpURLConnection 직접 사용
-        // → 리다이렉트 없이 헤더 유실 없이 안전하게 요청
         try {
             String validateUrl = memberSecurityUrl + "/auth/validate";
             log.debug("[JwtDelegateFilter] 검증 요청 URL={}", validateUrl);
@@ -60,15 +62,14 @@ public class JwtDelegateFilter extends OncePerRequestFilter {
             URL url = new URL(validateUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
-            conn.setRequestProperty("Authorization", "Bearer " + token );
+            conn.setRequestProperty("Authorization", "Bearer " + token);
             conn.setRequestProperty("Cookie", "REFRESH_TOKEN=" + refreshToken);
             conn.setRequestProperty("Content-Type", "application/json");
-            conn.setInstanceFollowRedirects(false); // 리다이렉트 절대 따라가지 않음
+            conn.setInstanceFollowRedirects(false);
             conn.setConnectTimeout(3000);
             conn.setReadTimeout(3000);
             int statusCode = conn.getResponseCode();
 
-            // 새 Access Token 쿠키 브라우저에 전달
             String setCookie = conn.getHeaderField("Set-Cookie");
             if (setCookie != null) {
                 response.setHeader("Set-Cookie", setCookie);
@@ -77,7 +78,6 @@ public class JwtDelegateFilter extends OncePerRequestFilter {
             log.debug("[JwtDelegateFilter] 응답 코드={}", statusCode);
 
             if (statusCode == 200) {
-                // 응답 body 읽기
                 String body;
                 try (BufferedReader br = new BufferedReader(
                         new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
@@ -85,7 +85,6 @@ public class JwtDelegateFilter extends OncePerRequestFilter {
                 }
                 log.debug("[JwtDelegateFilter] 응답 body={}", body);
 
-                // JSON → UserInfoDto 파싱 (현재 ClassLoader 기준 → devtools 충돌 없음)
                 UserInfoDto userInfo = objectMapper.readValue(body, UserInfoDto.class);
                 SecurityContextHolder.getContext().setAuthentication(
                         new UsernamePasswordAuthenticationToken(userInfo, null, userInfo.getAuthorities()));
