@@ -22,6 +22,7 @@ public class MyChatDTO {
     private LocalDateTime myChatRegistration;
     private Long showChatKey;
     private List<FilePartDTO> files;
+    private String customPrompt; // ✅ X-Custom-Prompt 헤더 대신 body로 받기
 
     public static class FilePartDTO {
         private String name;
@@ -29,7 +30,6 @@ public class MyChatDTO {
         private String data;
         private String type;
 
-        // 👇 이렇게 직접 통로(Getter)를 만들어 줍니다.
         public String getData() {
             return this.data;
         }
@@ -37,8 +37,6 @@ public class MyChatDTO {
         public String getMimeType() {
             return this.mimeType;
         }
-
-        // (필요하다면 다른 필드들의 getter/setter도 추가)
     }
 
     public void changeMyChatContents(String myChatContents) {
@@ -55,6 +53,10 @@ public class MyChatDTO {
 
     public void myChatKey(Long myChatKey) {
         this.myChatKey = myChatKey;
+    }
 
+    // ✅ 채팅방 키 세팅 메서드 추가
+    public void setShowChatKey(Long showChatKey) {
+        this.showChatKey = showChatKey;
     }
 }

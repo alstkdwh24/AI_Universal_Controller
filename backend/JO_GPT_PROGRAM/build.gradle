@@ -21,8 +21,8 @@ configurations {
 }
 
 // 여기에 ai mavenBom 추가
-dependencyManagement{
-    imports{
+dependencyManagement {
+    imports {
         mavenBom "org.springframework.ai:spring-ai-bom:1.1.5"
     }
 }
@@ -33,14 +33,14 @@ repositories {
 }
 dependencies {
     // Vertex AI Search 클라이언트
+//    implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
+
     implementation 'com.google.cloud:google-cloud-discoveryengine:0.41.0'
     implementation 'org.springframework.ai:spring-ai-starter-model-google-genai-embedding'
 
-    implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'  // Gemini 채팅 + 임베딩
-
-    // 1. Spring Boot Starters: 서비스 운영에 필요한 핵심 라이브러리들
+    implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'      // 데이터베이스 ORM(JPA) 지원
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'    // Redis 캐시 및 데이터 구조 지원
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client' // 구글, 카카오 등 소셜 로그인 기능
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'     // 서버사이드 템플릿 엔진 (HTML 렌더링)
     implementation 'org.springframework.boot:spring-boot-starter-web'           // 내장 톰캣 포함, 웹 MVC 핵심 기능 (webmvc 대체)
@@ -64,7 +64,9 @@ dependencies {
 
     // 5. 테스트 의존성 (표준화)
     testImplementation 'org.springframework.boot:spring-boot-starter-test'      // 통합 테스트 환경 (JUnit, Mockito 등 포함)
-    testImplementation 'org.springframework.security:spring-security-test'      // 보안 관련 로직 테스트 지원
+    testImplementation 'org.springframework.security:spring-security-test'
+    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'com.h2database:h2'// 보안 관련 로직 테스트 지원
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     /*실시간 알림*/
@@ -72,9 +74,24 @@ dependencies {
 
     // 벡터 스토어 (ChromaDB)
     implementation 'org.springframework.ai:spring-ai-starter-vector-store-chroma'
+    // HTML을 읽고 파싱하는 라이브러리
+    implementation 'org.jsoup:jsoup:1.17.2'
+
+// Google API
+    implementation 'com.google.api-client:google-api-client:2.2.0'
+    implementation 'com.google.auth:google-auth-library-oauth2-http:1.19.0'
+    implementation 'com.google.apis:google-api-services-gmail:v1-rev20220404-2.0.0'
+    implementation 'com.google.apis:google-api-services-calendar:v3-rev20220715-2.0.0'
+    implementation 'com.google.apis:google-api-services-sheets:v4-rev20220927-2.0.0'
+    implementation 'com.google.apis:google-api-services-docs:v1-rev20220609-2.0.0'
+    implementation 'com.google.apis:google-api-services-drive:v3-rev20220815-2.0.0'
+    implementation 'com.google.apis:google-api-services-youtube:v3-rev20230816-2.0.0'
 
     implementation project(':EntityCom')
 }
 tasks.named('test') {
     useJUnitPlatform()
+}
+test {
+    jvmArgs '-Xmx2048m', '-Xms512m'
 }

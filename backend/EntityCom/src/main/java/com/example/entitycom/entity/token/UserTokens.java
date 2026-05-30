@@ -23,7 +23,7 @@ public class UserTokens {
     private Long userTokenKey; // PK 필드 (Members의 memberKey를 상속받음)
 
     // Members 테이블 조인
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_key" ,referencedColumnName ="member_key" ) // DB 컬럼명
     private Members member;
 

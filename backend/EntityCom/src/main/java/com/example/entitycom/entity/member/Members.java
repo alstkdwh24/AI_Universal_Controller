@@ -1,9 +1,8 @@
 package com.example.entitycom.entity.member;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.example.entitycom.converter.AesEncryptConverter;
 import com.example.entitycom.entity.chat.ShowChat;
+import com.example.entitycom.entity.connect.ConnectedAccounts;
 import com.example.entitycom.entity.device.Devices;
 import com.example.entitycom.entity.gpt.GPT;
 import com.example.entitycom.entity.gpt.GPTSessions;
@@ -12,21 +11,15 @@ import com.example.entitycom.entity.token.MonthlyUsage;
 import com.example.entitycom.entity.token.PlanLimits;
 import com.example.entitycom.entity.token.UserTokens;
 import com.example.entitycom.enums.Role;
-
 import io.hypersistence.utils.hibernate.id.Tsid;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 //유저 아이디 엔터티
 @Entity
@@ -44,6 +37,7 @@ public class Members {
     @Column(name = "member_id", nullable = false)
     private String memberId;
 
+    @Convert(converter = AesEncryptConverter.class)
     @Column(name = "nickname", nullable = false)
     private String nickname;
 
@@ -72,11 +66,11 @@ public class Members {
     private Devices devices;
 
     // GPT 대화내용을 참조하기 위한 조인
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<GPT> gptList = new ArrayList<>();
 
     // GPT 세션 정보를 참조하기 위한 조인
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<GPTSessions> gptSessionsList = new ArrayList<>();
 
     // 월 토큰 사용량을 참조하기 위한 조인
@@ -98,6 +92,9 @@ public class Members {
     @OneToMany(mappedBy = "members", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ShowChat> showChatList = new ArrayList<>();
 
+    // Members.java 에 추가
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ConnectedAccounts> connectedAccounts = new ArrayList<>();
 
     public void changeMemberId(String memberId) {
         if (memberId != null && !memberId.isEmpty()) {

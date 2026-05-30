@@ -34,12 +34,12 @@ public class TaskQueue {
     private ChatHistory chatHistory;
 
     // Devices 테이블 조인 senderDevice
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_device_id", referencedColumnName = "device_key")
     private Devices senderDevice;
 
     // Devices 테이블 조인 receiverDevice
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "receiver_device_id", referencedColumnName = "device_key")
     private Devices receiverDevice;
 

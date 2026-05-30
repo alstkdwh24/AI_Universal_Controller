@@ -23,7 +23,7 @@ public class ThirdPartyApps {
     }
 
     // Device 테이블 조인
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "device_key", referencedColumnName = "device_key")
     private Devices devices;
 

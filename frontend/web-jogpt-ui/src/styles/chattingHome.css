@@ -59,6 +59,9 @@
     line-height: 1.6;
     /* 폰트 크기의 1.6배 간격 (가장 추천하는 가독성 범위: 1.5 ~ 1.8) */
     color: #101D42;
+    max-width: 80%;
+    word-break: break-word;
+    overflow-wrap: break-word;
 
 }
 
@@ -70,6 +73,8 @@
     width: 100%;
     justify-content: flex-start;
     margin-bottom: 20px;
+    overflow: hidden;
+    box-sizing: border-box;
     /* 단락 아래에 20px만큼 공간을 만듭니다 */
 
 }
@@ -82,16 +87,17 @@
     /* 폰트 크기의 1.6배 간격 (가장 추천하는 가독성 범위: 1.5 ~ 1.8) */
     color: #0F172A;
     /* 기존 white → 다크 네이비 그레이로 변경 */
+    max-width: 100%;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 /* Gemini 스타일 로딩 */
 .gemini-loader {
-    width: 48px;
-    height: 48px;
-    position: relative;
     display: flex;
+    flex-direction: row;
     align-items: center;
-    justify-content: center;
+    gap: 12px;
     margin: 0.8rem 1rem;
 }
 
@@ -253,6 +259,7 @@
 
     /* 2. IE 및 구형 Edge: 특수 속성 */
     -ms-overflow-style: none;
+    overflow-anchor: none; /* 새 내용 추가 시 자동 스크롤 방지 */
 }
 
 /* 메시지 전송 후 채팅 영역 전환 */
@@ -260,10 +267,12 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    height: 80%;
+    flex: 1;
+    min-height: 0;
     width: 44rem;
     gap: 1rem;
     overflow-y: auto;
+    overflow-anchor: none; /* 새 내용 추가 시 자동 스크롤 방지 */
 }
 
 /* AI 생성 이미지 */
@@ -365,4 +374,21 @@
     #realGeminiContent table {
         font-size: 0.85rem;
     }
+}
+/* 로딩 아이콘 wrapper */
+.gemini-loader-icon {
+    width: 48px;
+    height: 48px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* 로딩 텍스트 */
+.gemini-loader-text {
+    font-size: 14px;
+    color: #5B8DF5;
+    font-family: 'Noto Sans KR', sans-serif;
 }

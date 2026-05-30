@@ -21,7 +21,7 @@ public class PlanLimits {
     private Long planLimitKey;
 
     // Members 테이블 조인
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_key", referencedColumnName = "member_key")
     private Members member;
     @Column(nullable = false, name = "owner_type")

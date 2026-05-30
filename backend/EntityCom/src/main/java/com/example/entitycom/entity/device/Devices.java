@@ -61,18 +61,18 @@ public class Devices {
     private int batteryLevel;
 
     /* CreateTimeLogs 테이블 조인 리스트화 */
-    @OneToMany(mappedBy = "devices", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "devices", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<CreateTimeLogs> createTimeLogsList = new ArrayList<>();
 
     /* TaskQueue 테이블 조인 리스트화 */
-    @OneToMany(mappedBy = "senderDevice", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "senderDevice", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<TaskQueue> taskQueueList = new ArrayList<>();
 
     /* ChatHistory 테이블 조인 리스트화 */
-    @OneToMany(mappedBy = "devices", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "devices", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ChatHistory> chatHistoryList = new ArrayList<>();
 
     /* ThirdPartyApps 테이블 조인 리스트화 */
-    @OneToMany(mappedBy = "devices", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "devices", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ThirdPartyApps> thirdPartyAppsList = new ArrayList<>();
 }

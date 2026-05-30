@@ -47,12 +47,12 @@ public class CreateTimeLogs {
     private Members member;
 
     // gpt_chat과 조인
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Gpt_chat_key", referencedColumnName = "Gpt_chat_key")
     private GptChat gptChatKey;
 
     // MyChat과 조인
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "my_chat_key", referencedColumnName = "my_chat_key")
     private MyChat myChatKey;
 
@@ -62,39 +62,39 @@ public class CreateTimeLogs {
     private Devices devices;
 
     /* TaskQueue 생성시간 조인 */
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_queue_key", referencedColumnName = "task_queue_key")
     private TaskQueue taskQueue;
 
 
 
     /* ChatAttachments 테이블 조인 */
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_attachment_key", referencedColumnName = "chat_attachment_key")
     private ChatAttachments chatAttachment;
 
     /*GPT*/
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gpt_key", referencedColumnName = "gpt_key")
     private GPT gpt;
 
     /* GPTSessions 생성시간 기록 */
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gpt_sessions_key", referencedColumnName = "GPTSessions_key")
     private GPTSessions gptSessions;
 
     /* ExecutionLogs 생성시간 기록 */
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "execution_logs_key", referencedColumnName = "execution_logs_key")
     private ExecutionLogs executionLogs;
 
     /* 유저 토큰 사용시간 기록을 위한 조인 */
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_token_key", referencedColumnName = "user_token_key")
     private UserTokens userToken;
 
     /*ShowChat 참조 추가*/
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "show_key", referencedColumnName = "show_key")
     private ShowChat showChat;
 }

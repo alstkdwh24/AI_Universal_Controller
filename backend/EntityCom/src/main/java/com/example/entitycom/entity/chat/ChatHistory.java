@@ -27,15 +27,15 @@ public class ChatHistory {
     private Long chatHistoryKey;
 
     /*GPTSession 테이블 조인*/
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gpt_sessions_key_gpt_sessions_key", referencedColumnName = "GPTSessions_key")
     private GPTSessions gptSessions;
     /*Device 테이블 조인*/
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "devices_key_device_key", referencedColumnName = "device_key")
     private Devices devices;
     //chatHistory 테이블 조인
-    @OneToMany(mappedBy = "chatHistory", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "chatHistory", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ChatAttachments> chatAttachments = new ArrayList<>();
 
 

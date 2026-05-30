@@ -133,3 +133,58 @@
     from { transform: translateY(100%); }
     to   { transform: translateY(0); }
 }
+/* 연동 서비스 */
+.sv-connect-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+}
+.sv-connect-item:last-child { border-bottom: none; }
+
+.sv-connect-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #4285F4;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sv-connect-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.sv-connect-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+.sv-connect-desc {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.sv-connect-btn {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: none;
+    background: #4285F4;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.sv-connect-btn--on {
+    background: #e8f5e9;
+    color: #2e7d32;
+    cursor: default;
+}

@@ -1,5 +1,5 @@
 import CONFIG from "./config";
-
+// 리프레쉬 토큰
 export const fetchWithRefresh = async (url, options = {}) => {
     let res = await fetch(url, options);
     if (res.status === 401) {

@@ -1,50 +1,46 @@
 package com.example.jo_gpt_program.gpt.config.filter;
 
-import java.io.IOException;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.filter.OncePerRequestFilter;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.stream.Collectors;
+
+@Slf4j
 @Component
 public class JwtDelegateFilter extends OncePerRequestFilter {
 
     @Value("${spring.memberSecurity.url}")
     private String memberSecurityUrl;
 
-    @Value("${spring.joGptProgram.url}")
-    private String joGptProgramUrl;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private final RestTemplate restTemplate;
-
-    public JwtDelegateFilter(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
-
-    // MembersSecurity에 토큰 검증 요청
-    private HttpHeaders createHeaders(String token) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", token);
-        return headers;
+    // ✅ /connect/** 경로는 토큰 검증 건너뜀
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.startsWith("/connect/");
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        // ACCESS_TOKEN 쿠키에서 토큰 추출
+        String refreshToken = null;
         String token = null;
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
@@ -53,30 +49,55 @@ public class JwtDelegateFilter extends OncePerRequestFilter {
                     if (token != null) token = token.trim();
                     break;
                 }
+                if ("REFRESH_TOKEN".equals(cookie.getName())) {
+                    refreshToken = cookie.getValue();
+                }
             }
         }
 
-        // 토큰 없으면 그냥 통과
-        if (token == null || token.isEmpty()) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        // MembersSecurity에 토큰 검증 위임
         try {
-            ResponseEntity<UserInfoDto> responses = restTemplate.exchange(
-                    memberSecurityUrl + "/auth/validate",
-                    HttpMethod.GET,
-                    new HttpEntity<>(createHeaders("Bearer " + token)),
-                    UserInfoDto.class);
+            String validateUrl = memberSecurityUrl + "/auth/validate";
+            log.debug("[JwtDelegateFilter] 검증 요청 URL={}", validateUrl);
 
-            if (responses.getStatusCode().is2xxSuccessful() && responses.getBody() != null) {
-                UserInfoDto userInfo = responses.getBody();
+            URL url = new URL(validateUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Authorization", "Bearer " + token);
+            conn.setRequestProperty("Cookie", "REFRESH_TOKEN=" + refreshToken);
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setInstanceFollowRedirects(false);
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(3000);
+            int statusCode = conn.getResponseCode();
+
+            String setCookie = conn.getHeaderField("Set-Cookie");
+            if (setCookie != null) {
+                response.setHeader("Set-Cookie", setCookie);
+                log.debug("[JwtDelegateFilter] 새 쿠키 브라우저에 전달: {}", setCookie);
+            }
+            log.debug("[JwtDelegateFilter] 응답 코드={}", statusCode);
+
+            if (statusCode == 200) {
+                String body;
+                try (BufferedReader br = new BufferedReader(
+                        new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                    body = br.lines().collect(Collectors.joining());
+                }
+                log.debug("[JwtDelegateFilter] 응답 body={}", body);
+
+                UserInfoDto userInfo = objectMapper.readValue(body, UserInfoDto.class);
                 SecurityContextHolder.getContext().setAuthentication(
                         new UsernamePasswordAuthenticationToken(userInfo, null, userInfo.getAuthorities()));
+
+            } else {
+                log.warn("[JwtDelegateFilter] 토큰 검증 실패 statusCode={}", statusCode);
+                SecurityContextHolder.clearContext();
             }
+
+            conn.disconnect();
+
         } catch (Exception e) {
-            // 검증 실패 시 인증 정보 없이 통과 (Security 설정에서 401 처리)
+            log.error("[JwtDelegateFilter] 검증 중 에러: {}", e.getMessage());
             SecurityContextHolder.clearContext();
         }
 

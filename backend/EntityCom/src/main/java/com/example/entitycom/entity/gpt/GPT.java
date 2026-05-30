@@ -26,7 +26,7 @@ public class GPT {
     private Long GPTKey;
 
     // Members 테이블 조인
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_key")
     private Members member;
 
@@ -35,11 +35,11 @@ public class GPT {
 
 
     /* GptChat 테이블 데이터 조인 리스트화 */
-    @OneToMany(mappedBy = "gptKey", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "gptKey", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<GptChat> gptChat = new ArrayList<>();
 
     /* MyChat 테이블 데이터 조인 리스트화 */
-    @OneToMany(mappedBy = "gpt", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "gpt", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<MyChat> myChat = new ArrayList<>();
 
     /* CreateTimeLogs GPT 생성 시각 */

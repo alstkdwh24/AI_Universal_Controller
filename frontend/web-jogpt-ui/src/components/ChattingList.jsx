@@ -9,7 +9,7 @@ export default function ChattingList({ onChatSelect, user }) {
     useEffect(() => {
         loadChattingList();
     }, []);
-
+    // 채팅 리스트 로딩
     const loadChattingList = async () => {
         if (user) {
             try {
@@ -34,16 +34,21 @@ export default function ChattingList({ onChatSelect, user }) {
         }
     };
 
-
+    // 시간 포맷 - 한국 시간(Asia/Seoul)으로 변환
     const formatTime = (dateStr) => {
         const d = new Date(dateStr);
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        const hours = String(d.getHours()).padStart(2, '0');
-        const minutes = String(d.getMinutes()).padStart(2, '0');
-        return `${month}/${day} ${hours}:${minutes}`;
+        return d.toLocaleString('ko-KR', {
+            timeZone: 'Asia/Seoul',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).replace('. ', '/')
+            .replace("." ,"");
     };
 
+    // 채팅 삭제 메서드
     const handleDelete = async (e, key) => {
         e.stopPropagation();
         if (!user) return;
@@ -58,11 +63,25 @@ export default function ChattingList({ onChatSelect, user }) {
             console.error('채팅 삭제 실패:', e);
         }
     };
-
-    const handleSearchInput = (e) => {
+    // 채팅 검색 (아직 미완)
+    const  handleSearchInput = (e) => {
         setSearch(e.target.value);
         e.target.style.height = 'auto';
         e.target.style.height = e.target.scrollHeight + 'px';
+        const res= fetch(`${CONFIG.API_CONTENTS_URL}/contents/searchChatting`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                search: e.target.value
+            })
+        });
+         if(res !== null){
+             res.then(res => res.json())
+
+         }
     };
 
 
@@ -124,4 +143,3 @@ export default function ChattingList({ onChatSelect, user }) {
         </div>
     );
 }
-

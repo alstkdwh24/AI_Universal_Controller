@@ -4,8 +4,10 @@ import com.example.entitycom.entity.chat.ShowChat;
 import com.example.entitycom.entity.log.CreateTimeLogs;
 
 import io.hypersistence.utils.hibernate.id.Tsid;
+import com.example.entitycom.converter.AesEncryptConverter;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -29,9 +31,9 @@ public class GptChat {
     @Column(name = "Gpt_chat_key", unique = true, nullable = false)
     private Long GptChatKey;
 
+    @Convert(converter = AesEncryptConverter.class)
     @Column(nullable = false, name = "Gpt_chat_contents", columnDefinition = "TEXT")
-
-    private String GptChatContents;
+    private String gptChatContents;
 
     @Column(nullable = true, name = "Gpt_chat_image")
     private String GptChatImage;
@@ -46,12 +48,12 @@ public class GptChat {
     private CreateTimeLogs createTimeLogs;
 
     // GPT 테이블과 조인
-    @ManyToOne
+    @ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
     @JoinColumn(name = "gpt_key_gpt_key", referencedColumnName = "GPT_key")
     private GPT gptKey;
 
     /* ShowChat 참조 추가 */
-    @ManyToOne
+    @ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
     @JoinColumn(name = "show_key", referencedColumnName = "show_key")
     private ShowChat showChat;
 

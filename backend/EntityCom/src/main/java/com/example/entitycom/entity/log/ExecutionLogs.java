@@ -23,7 +23,7 @@ public class ExecutionLogs {
     private Long executionLogKey;
 
     /* TaskQueue 실행되는 것을 알기 위한 조인 */
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_queue_key" ,referencedColumnName ="task_queue_key")
     private TaskQueue taskQueue;
 

@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import CONFIG from '../config/config';
-
+// 닉네임 관련 모달
 export default function NicknameSetupModal({ socialNickname, onComplete }) {
+    // const [변수명, 변수를 바꾸는 함수] = useState(초기값)
     const [mode, setMode] = useState(socialNickname ? 'choose' : 'input');
+    // 닉네임을
     const [nickname, setNickname] = useState('');
+    // 로딩
     const [loading, setLoading] = useState(false);
+    // 에러
     const [error, setError] = useState('');
-
+    // 나의 닉네임 저장
     const saveNickname = async (value) => {
         const trimmed = value.trim();
         if (!trimmed) { setError('닉네임을 입력해주세요.'); return; }
@@ -17,6 +21,7 @@ export default function NicknameSetupModal({ socialNickname, onComplete }) {
         setLoading(true);
         setError('');
         try {
+            // 닉네임 설정 fetch 요청
             const res = await fetch(`${CONFIG.API_BASE_URL}/login/nickname`, {
                 headers: { 'Content-Type': 'application/json' },
                 method: 'PUT',
@@ -81,7 +86,7 @@ export default function NicknameSetupModal({ socialNickname, onComplete }) {
                             autoFocus
                         />
                         {error && <p className="nickname-error">{error}</p>}
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{ display: 'flex', gap: '8px', width: '30%' }}>
                             {socialNickname && (
                                 <button
                                     className="nickname-btn"

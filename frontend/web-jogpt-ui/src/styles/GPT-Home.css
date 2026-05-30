@@ -374,15 +374,16 @@ body {
     display: block;
     width: 100%;
     border: none;
-    height: 70%;
     min-height: 56px;
     padding: 12px 12px 0 12px;
     /* 오른쪽 버튼 공간 */
     border-radius: 20px;
     resize: none;
-    overflow-y: hidden;
-    /* ✅ 세로 스크롤 대신 높이로 증가 */
+    max-height: 150px;
+    overflow-y: auto; /* ✅ 일정 높이 초과 시 스크롤 */
     overflow-x: hidden;
+    word-break: break-word;
+    overflow-wrap: break-word;
     box-sizing: border-box;
     font-size: 16px;
     font-family: 'Cafe24Ssurround', sans-serif;
@@ -394,6 +395,33 @@ body {
 .fake-input:focus {
     outline: none;
     /*  검은 테두리 제거 */
+}
+
+/* 새 답변 스크롤 버튼 */
+.scroll-down-btn {
+    position: fixed;
+    bottom: 140px;
+    left: calc(4rem + (100vw - 4rem) / 2);
+    transform: translateX(-50%);
+    background-color: #3A6BF5;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 10px 20px;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(58, 107, 245, 0.4);
+    z-index: 100;
+    animation: fadeInUp 0.3s ease;
+}
+
+.scroll-down-btn:hover {
+    background-color: #2a5be0;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 .search-div {
@@ -710,3 +738,34 @@ body {
         padding: 5px 20px 5px 9px;
     }
 }
+/* 정지 버튼 */
+.search-stop {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    place-items: center;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+.search-stop i {
+    color: #3A6BF5;
+    font-size: 20px;
+    border-radius: 3px;
+}
+.search-stop:hover {
+    background: rgba(58, 107, 245, 0.1);
+}
+
+
+
+
+
+
+
+
