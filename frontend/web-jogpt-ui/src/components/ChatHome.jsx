@@ -300,17 +300,15 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
 
 
 
-    // // 문서에 있는지 확인
+    // 문서에 있는지 확인
     const checkDocument = async (myContent) => {
         const query = Array.isArray(myContent) ? myContent.findLast(m => m.role === 'user')?.content ?? '' : myContent;
-        console.log('checkDocument', query);
         if (!query) return null;
         // 1. 서버에 "이 질문과 관련된 문서 있어?" 라고 물어봄
         const res = await postFetch(
             `${CONFIG.API_CONTENTS_URL}/contents/documents/search`,
             {query: query}
         );
-        console.log('checkDocument', res);
         // 2. 관련 문서가 있으면 반환, 없으면 null
 
         if (!res.ok) return null;
@@ -350,7 +348,6 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
         }
         setAttachedFiles([]); // 전송 후 첨부 파일 초기화
 
-        // GPT 답변 알람 관련 메서드
         const sendBrowserNotification = (content) => {
             if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
                 new Notification('JO-GPT 답변 도착', {
@@ -396,12 +393,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
                     sendBrowserNotification(fullContent);
                 }
             }, TICK_MS);
-            await fetchWithRefresh(`${CONFIG.API_CONTENTS_URL}/contents/notifications`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({message: '"gpt 답변이 등록되었습니다."'})
-            });
+
             if (onNotification) onNotification(fullContent.replace(/[#*`>\-]/g, '').slice(0, 50), chatKey);
         }
     };
@@ -410,11 +402,11 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
     const handleGptResponseText = async (gptText, chatKey) => {
         if (!gptText) return;
         let fullContent = gptText;
-        // Google 연동 안 됐을 때 연동 안내
+        // Google 연동 안내
         if (fullContent.trim() === "GOOGLE_NOT_CONNECTED") {
             setMessages(prev => [...prev, {
                 role: "ai",
-                content: "🔗 **Google 계정이 연동되지 않았어요!**\n\n메일·캘린더 기능을 사용하려면 Google 계정을 연동해주세요.",
+                content: "🔗 **Google 계정이 연동되지 않았어요!**\n\n- **Gmail**: 메일 조회 및 분석 발송\n- **YouTube**: 영상 요약 및 검색\n- **Google 캘린더**: 일정 조회 및 자동 등록\n\n설정에서 연동 후 다양한 기능을 이용해보세요!",
                 showGoogleConnect: true
             }]);
             return;
@@ -450,22 +442,8 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
     };
 
     useEffect(() => {
-        if (!('Notification' in window)) {
-            console.log("이 브라우저는 알림을 지원하지 않습니다.");
-            return;
-        }
-        if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-            Notification.requestPermission().then((permission) => {
-                if (permission === 'granted') {
-                    console.log("알림 권한이 허용되었습니다.");
-                    new Notification("알림이 활성화되었습니다!", {
-                        body: "이제 새로운 메시지가 도착하면 알림을 받을 수 있습니다.",
-                        icon: '/favicon.ico'
-                    });
-                } else if (permission === 'denied') {
-                    console.log("알림 권한이 거부되었습니다. 알림을 받을 수 없습니다.");
-                }
-            })
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
         }
     }, []);
 
@@ -492,9 +470,7 @@ export default function ChatHome({user, isActive, selectedChatKey, onChatLoaded,
         });
 
     const handlePaste = (e) => {
-        console.log('paste 이벤트 발생', e.clipboardData?.items);
         const items = Array.from(e.clipboardData?.items || []);
-        console.log('items:', items.map(i => `kind=${i.kind} type=${i.type}`));
         const fileItems = items.filter(item => item.kind === 'file');
         if (fileItems.length === 0) return;
 

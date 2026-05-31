@@ -50,6 +50,7 @@ dependencies {
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'      // Thymeleaf에서 보안(Security) 관련 태그 사용
     implementation 'org.testng:testng:6.9.6'                                   // 테스트 프레임워크 (필요 시 JUnit과 병행 가능)
     implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.9.0'
+    implementation project(':MembersSecurity')
 
     // 3. Lombok: 반복되는 Getter/Setter 등의 코드를 줄여주는 라이브러리
     compileOnly 'org.projectlombok:lombok'

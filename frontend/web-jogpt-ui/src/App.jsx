@@ -10,7 +10,6 @@ import SettingsView from './components/SettingsView';
 import SideBar from './components/SideBar';
 import TopBar from './components/TopBar';
 import CONFIG from './config/config';
-import DocumentUpload from './components/DocumentUpload';
 
 import './styles/alertModal.css';
 import './styles/chatTing.css';
@@ -94,6 +93,34 @@ export default function App() {
             setPendingNicknameSetup(false);
         }
     }, [user, pendingNicknameSetup]);
+
+    // ✅ SSE 연결 - user 바뀔 때만 재연결 (의존성 배열에 user 추가!)
+    useEffect(() => {
+        console.log("1111111");
+
+        if (!user) return; // 비로그인이면 연결 안 함
+
+        const eventSource = new EventSource(
+            `${CONFIG.API_CONTENTS_URL}/alert/connects`,
+            { withCredentials: true } // 쿠키(JWT) 포함!
+        );
+
+        // 알림 수신 - chatKey는 onNotification에서 받아서 넣어줌
+        eventSource.onmessage = (event) => {
+            handleNotification(event.data, null);
+        };
+
+        eventSource.onerror = (error) => {
+            console.error('SSE 연결 오류:', error);
+            eventSource.close();
+        };
+
+        // 언마운트 or user 변경 시 연결 해제
+        return () => {
+            eventSource.close();
+        };
+
+    }, [user]); // ✅ user 바뀔 때만 재실행!
 
     const fetchMyInfo = async () => {
 

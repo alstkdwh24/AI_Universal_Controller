@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
+import config from "../config/config.js";
 
 const PROMPTS_KEY = 'CUSTOM_PROMPTS';
 const ACTIVE_KEY = 'CUSTOM_PROMPT';
-const BASE_URL = 'http://localhost:8082';
-const AUTH_URL = 'http://localhost:8086';
+const AUTH_URL = config.API_BASE_URL;
 
 const UPDATE_LOGS = [
+    { version: '1.0.4', date: '2025-05-30', changes: ['구글 서비스(메일, 캘린더) 연결'] },
+
     { version: '1.0.3', date: '2025-05-29', changes: ['임베딩 관련 코드 구성', '검색 api 긴 검색어 때문에 llm오류 현상 해결', '검색 쿼리 글자 401이상이여도 빠른 llm 응답 로직 구현', '메시지 정지 가능'] },
     { version: '1.0.2', date: '2025-05-26', changes: ['쿠키 생존시간 증가', '채팅방 생성을 했는데 다른 채팅방이랑 묶이는 현상 해결', '서비 시간 수정'] },
     { version: '1.0.1', date: '2025-05-25', changes: ['장소 검색시 카카오맵 연동 지도ui 구성', 'llm이 최신 날짜를 기준으로 최신 정보를 검색해서 답변하게 함'] },
@@ -107,40 +109,49 @@ function PromptListPage({ onBack }) {
     );
 }
 
-// 개별 서비스 연동 모달
-function GoogleServicesModal({ accounts, onClose, onConnect, onDisconnect }) {
+// 개별 서비스 정보 모달
+function GoogleServicesModal({ onClose }) {
     const SERVICES = [
-        { key: "gmail",    icon: "✉", color: "#EA4335", name: "Gmail",         desc: "메일 읽기·보내기" },
-        { key: "youtube",  icon: "▶", color: "#FF0000", name: "YouTube",       desc: "영상 요약·검색" },
-        { key: "calendar", icon: "📅", color: "#0B8043", name: "Google 캘린더", desc: "일정 조회·추가" },
+        { 
+            key: "gmail",    
+            icon: "✉", 
+            color: "#EA4335", 
+            name: "Gmail",         
+            desc: "메일 조회 및 AI 분석 발송" 
+        },
+        { 
+            key: "youtube",  
+            icon: "▶", 
+            color: "#FF0000", 
+            name: "YouTube",       
+            desc: "영상 요약 및 관련 영상 검색" 
+        },
+        { 
+            key: "calendar", 
+            icon: "📅", 
+            color: "#0B8043", 
+            name: "Google 캘린더", 
+            desc: "일정 조회 및 AI 자동 등록" 
+        },
     ];
-    const isConnected = (key) => accounts.some(a => a.provider === key);
-    const getEmail   = (key) => { const a = accounts.find(a => a.provider === key); return a ? a.providerEmail || "" : ""; };
 
     return (
         <div className="gsvc-overlay" onClick={onClose}>
             <div className="gsvc-modal" onClick={e => e.stopPropagation()}>
                 <div className="gsvc-header">
-                    <span className="gsvc-title">Google 서비스 연동</span>
+                    <span className="gsvc-title">Google 서비스 기능 안내</span>
                     <button className="gsvc-close" onClick={onClose}>✕</button>
                 </div>
-                <p className="gsvc-desc">Google 계정과 연동할 서비스를 선택하세요.</p>
+                <p className="gsvc-desc">JO-GPT에서 제공하는 Google 서비스 연동 기능입니다.</p>
                 <div className="gsvc-list">
                     {SERVICES.map(({ key, icon, color, name, desc }) => {
-                        const connected = isConnected(key);
-                        const email = getEmail(key);
                         return (
                             <div key={key} className="gsvc-item">
                                 <div className="gsvc-icon" style={{ background: color }}>{icon}</div>
                                 <div className="gsvc-detail">
                                     <span className="gsvc-name">{name}</span>
-                                    <span className="gsvc-sub">{connected ? (email || "연동됨") + " ✅" : desc}</span>
+                                    <span className="gsvc-sub">{desc}</span>
                                 </div>
-                                {connected ? (
-                                    <button className="gsvc-disconnect-btn" onClick={() => onDisconnect(key)}>해제</button>
-                                ) : (
-                                    <button className="gsvc-connect-btn" onClick={() => onConnect(key)}>연동</button>
-                                )}
                             </div>
                         );
                     })}
@@ -165,12 +176,14 @@ function ConnectedAccountsSection() {
     };
 
     useEffect(() => {
-        fetchAccounts();
-        const params = new URLSearchParams(window.location.search);
-        if (params.get("connected")) {
-            fetchAccounts();
-            window.history.replaceState({}, "", window.location.pathname);
-        }
+        const init = async () => {
+            await fetchAccounts();
+            const params = new URLSearchParams(window.location.search);
+            if (params.get("connected")) {
+                window.history.replaceState({}, "", window.location.pathname);
+            }
+        };
+        init();
     }, []);
 
     const googleAccount = accounts.find(a => a.provider === "google");
@@ -197,19 +210,22 @@ function ConnectedAccountsSection() {
                     <div className="sv-connect-item">
                         <div className="sv-connect-icon" style={{ background: "#4285F4" }}>G</div>
                         <div className="sv-connect-detail">
-                            <span className="sv-connect-name">Google 계정</span>
+                            <span className="sv-connect-name">Google 서비스 기능</span>
                             <span className="sv-connect-sub">
-                                {googleAccount ? (googleAccount.providerEmail || "연동됨") + " ✅" : "미연동"}
+                                {googleAccount ? (googleAccount.providerEmail || "연동됨") + " ✅" : "미연동 (기능 안내 보기는 가능)"}
                             </span>
                         </div>
                         <div className="sv-connect-actions">
                             {googleAccount ? (
                                 <>
-                                    <button className="sv-detail-btn" onClick={() => setShowModal(true)}>서비스 관리</button>
+                                    <button className="sv-detail-btn" onClick={() => setShowModal(true)}>기능 안내</button>
                                     <button className="sv-disconnect-btn" onClick={() => handleDisconnect("google")}>해제</button>
                                 </>
                             ) : (
-                                <button className="sv-connect-btn" onClick={() => handleConnect("google")}>연동</button>
+                                <>
+                                    <button className="sv-detail-btn" onClick={() => setShowModal(true)}>기능 안내</button>
+                                    <button className="sv-connect-btn" onClick={() => handleConnect("google")}>연동</button>
+                                </>
                             )}
                         </div>
                     </div>
@@ -217,10 +233,7 @@ function ConnectedAccountsSection() {
             </div>
             {showModal && (
                 <GoogleServicesModal
-                    accounts={accounts}
                     onClose={() => setShowModal(false)}
-                    onConnect={handleConnect}
-                    onDisconnect={handleDisconnect}
                 />
             )}
         </>
@@ -314,7 +327,7 @@ export default function SettingsView({ onBack, user }) {
                     <div className="sv-section-title">정보</div>
                     <div className="sv-item">
                         <span className="sv-item-label">버전</span>
-                        <span className="sv-item-value">1.0.1</span>
+                        <span className="sv-item-value">1.0.4</span>
                     </div>
                     <button className="sv-goto-list-btn" onClick={() => setView('updateLog')}>
                         <span>업데이트 내역</span>
