@@ -28,9 +28,11 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service("geminiService")
@@ -52,24 +54,12 @@ public class GeminiService {
     private final KakaoMapService kakaoMapService;
     private final GoogleService googleService;
 
+    private final AlertService alertService;
 
-    private static final List<String> MAP_KEYWORDS = List.of(
-            "카페", "커피숍", "커피전문점", "맛집", "식당", "음식점", "레스토랑", "한식당",
-            "고깃집", "분식", "분식집", "술집", "이자카야", "바", "펍", "포차",
-            "빵집", "베이커리", "디저트", "아이스크림",
-            "공원", "해변", "해수욕장", "계곡", "산", "호수", "폭포", "섬",
-            "쇼핑몰", "백화점", "마트", "시장", "아울렛",
-            "박물관", "미술관", "갤러리", "전시관", "전시회",
-            "도서관", "스터디카페", "독서실",
-            "헬스장", "피트니스", "수영장", "볼링장", "당구장",
-            "호텔", "모텔", "펜션", "게스트하우스", "리조트",
-            "놀이공원", "워터파크", "동물원", "식물원",
-            "병원", "약국", "은행", "편의점",
-            "영화관", "공연장", "극장",
-            "어디", "위치", "장소", "지도", "근처", "주변", "찾아줘", "알려줘"
-    );
 
-    public GeminiService(ChatClient chatClient, ChatModel chatModel, ChatMemory chatMemory, RagService ragService, ShowChatRepository showChatRepository, GptChatRepository gptChatRepository, ScholarSearchService scholarSearchService, VectorStore vectorStore, KakaoMapService kakaoMapService, GoogleService googleService) {
+    private static final List<String> MAP_KEYWORDS = List.of("카페", "커피숍", "커피전문점", "맛집", "식당", "음식점", "레스토랑", "한식당", "고깃집", "분식", "분식집", "술집", "이자카야", "바", "펍", "포차", "빵집", "베이커리", "디저트", "아이스크림", "공원", "해변", "해수욕장", "계곡", "산", "호수", "폭포", "섬", "쇼핑몰", "백화점", "마트", "시장", "아울렛", "박물관", "미술관", "갤러리", "전시관", "전시회", "도서관", "스터디카페", "독서실", "헬스장", "피트니스", "수영장", "볼링장", "당구장", "호텔", "모텔", "펜션", "게스트하우스", "리조트", "놀이공원", "워터파크", "동물원", "식물원", "병원", "약국", "은행", "편의점", "영화관", "공연장", "극장", "어디", "위치", "장소", "지도", "근처", "주변", "찾아줘", "알려줘");
+
+    public GeminiService(ChatClient chatClient, ChatModel chatModel, ChatMemory chatMemory, RagService ragService, ShowChatRepository showChatRepository, GptChatRepository gptChatRepository, ScholarSearchService scholarSearchService, VectorStore vectorStore, KakaoMapService kakaoMapService, GoogleService googleService, AlertService alertService) {
         this.chatClient = chatClient;
         this.chatModel = chatModel;
         this.chatMemory = chatMemory;
@@ -81,6 +71,7 @@ public class GeminiService {
         this.kakaoMapService = kakaoMapService;
 
         this.googleService = googleService;
+        this.alertService = alertService;
     }
 
     private String extractLocationWithAI(String userMessage) {
@@ -115,13 +106,7 @@ public class GeminiService {
     // llm 모델과 설정 가져오기
     private String modelCall(ChatModel chatModel, String prompt) {
         ChatClient independentClient = ChatClient.builder(chatModel).build();
-        return independentClient.prompt()
-                .options(GoogleGenAiChatOptions.builder()
-                        .maxOutputTokens(200)
-                        .build())
-                .user(prompt)
-                .call()
-                .content();
+        return independentClient.prompt().options(GoogleGenAiChatOptions.builder().maxOutputTokens(200).build()).user(prompt).call().content();
     }
 
     // 키워드가 포함되면 작동
@@ -136,9 +121,7 @@ public class GeminiService {
         }
         UserMessage message = this.userMessageGet(dto);
         String webResults = scholarSearchService.searchWithTavily(dto.getMyChatContents());
-        String ragResult = (customPrompt != null && !customPrompt.isBlank())
-                ? ""
-                : ragService.findDocument(dto.getMyChatContents());
+        String ragResult = (customPrompt != null && !customPrompt.isBlank()) ? "" : ragService.findDocument(dto.getMyChatContents());
         String systemPrompt = getString(customPrompt, webResults, ragResult);
         String conversationId = dto.getShowChatKey() != null ? dto.getShowChatKey().toString() : null;
         List<Message> history = conversationId != null ? chatMemory.get(conversationId) : List.of();
@@ -147,19 +130,28 @@ public class GeminiService {
         history.forEach(msg -> log.info("[DEBUG] history msg - type={}, text={}", msg.getMessageType(), msg.getText()));
 
         if (model.contains("image")) {
-            return sendGeminiImageDirect(dto.getMyChatContents(), dto.getFiles(), model, systemPrompt,
-                    dto.getShowChatKey(), conversationId, history, message, ragResult);
+            return sendGeminiImageDirect(dto.getMyChatContents(), dto.getFiles(), model, systemPrompt, dto.getShowChatKey(), conversationId, history, message, ragResult, memberKey);
         }
         String response = this.sendMessage(history, message, model, systemPrompt);
         log.info("[LLM 원본 응답] response={}", response);
         response = this.mapLoad(dto.getMyChatContents(), response);
         response = this.saveResult(conversationId, message, response, dto.getShowChatKey());
-        saveToVectorStore(ragResult, response);
+        final String finalResponse = response;
+        // Promise.all()과 동일
+        // 둘다 끝날때까지 대기
+        CompletableFuture.allOf(
+                // 별도 쓰레드에서 코드를 비동기로 실행시키는 메서드
+                CompletableFuture.runAsync(() -> {
+            try {
+                alertService.sendAlert(memberKey, finalResponse);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }), CompletableFuture.runAsync(() -> saveToVectorStore(ragResult, finalResponse))).join();
         return response;
     }
 
-    private String sendGeminiImageDirect(String userMessage, List<MyChatDTO.FilePartDTO> files, String model,
-                                         String systemText, Long showChatKey, String conversationId, List<Message> history, UserMessage message, String ragResult) {
+    private String sendGeminiImageDirect(String userMessage, List<MyChatDTO.FilePartDTO> files, String model, String systemText, Long showChatKey, String conversationId, List<Message> history, UserMessage message, String ragResult, Long memberKey) {
         List<Part> parts = buildParts(userMessage, files);
         List<Content> contents = buildContents(history, parts);
         Client client = Client.builder().apiKey(geminiApiKey).build();
@@ -176,6 +168,12 @@ public class GeminiService {
         textContent = mapLoad(userMessage, textContent);
         UserMessage imageUserMessage = UserMessage.builder().text(userMessage).build();
         textContent = saveResult(conversationId, imageUserMessage, textContent, showChatKey);
+        final String finalTextContent = textContent;
+        try {
+            alertService.sendAlert(memberKey, finalTextContent);
+        }catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         saveToVectorStore(ragResult, textContent);
 
         if (!images.isEmpty()) {
@@ -199,10 +197,7 @@ public class GeminiService {
         chatMemory.add(conversationId, message);
         String cleanResponse = response.replaceAll("\\[\\[MAP_START:.*?:MAP_END\\]\\]", "").trim();
         chatMemory.add(conversationId, new AssistantMessage(cleanResponse));
-        GptChat gptChat = GptChat.builder()
-                .gptChatContents(response)
-                .showChat(showChatRepository.findById(showChatKey).orElse(null))
-                .build();
+        GptChat gptChat = GptChat.builder().gptChatContents(response).showChat(showChatRepository.findById(showChatKey).orElse(null)).build();
         gptChatRepository.save(gptChat);
         log.info("[saveResult] 응답 길이={}", response.length());
         return response;
@@ -231,43 +226,22 @@ public class GeminiService {
     private String sendMessage(List<Message> history, UserMessage message, String model, String systemPrompt) {
         List<Message> allMessages = new ArrayList<>(history);
         allMessages.add(message);
-        GoogleGenAiChatOptions options = GoogleGenAiChatOptions.builder()
-                .model(model)
-                .temperature(0.7)
-                .maxOutputTokens(6024)
-                .topP(0.9)
-                .topK(100)
-                .build();
-        return chatClient.prompt()
-                .system(systemPrompt)
-                .messages(allMessages)
-                .options(options)
-                .call()
-                .content();
+        GoogleGenAiChatOptions options = GoogleGenAiChatOptions.builder().model(model).temperature(0.7).maxOutputTokens(6024).topP(0.9).topK(100).build();
+        return chatClient.prompt().system(systemPrompt).messages(allMessages).options(options).call().content();
     }
 
     private UserMessage userMessageGet(MyChatDTO dto) {
         if (dto.getFiles() != null && !dto.getFiles().isEmpty()) {
-            List<Media> mediaList = dto.getFiles().stream()
-                    .filter(f -> f.getMimeType() != null)
-                    .map(f -> new Media(MimeTypeUtils.parseMimeType(f.getMimeType()),
-                            new ByteArrayResource(Base64.getDecoder().decode(f.getData()))))
-                    .toList();
-            return UserMessage.builder()
-                    .text(dto.getMyChatContents())
-                    .media(mediaList)
-                    .build();
+            List<Media> mediaList = dto.getFiles().stream().filter(f -> f.getMimeType() != null).map(f -> new Media(MimeTypeUtils.parseMimeType(f.getMimeType()), new ByteArrayResource(Base64.getDecoder().decode(f.getData())))).toList();
+            return UserMessage.builder().text(dto.getMyChatContents()).media(mediaList).build();
         } else {
-            return UserMessage.builder()
-                    .text(dto.getMyChatContents())
-                    .build();
+            return UserMessage.builder().text(dto.getMyChatContents()).build();
         }
     }
 
     private static @NonNull String getString(String customPrompt, String webResults, String ragResult) {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        String basePrompt = customPrompt != null && !customPrompt.isBlank() ? customPrompt
-                : """
+        String basePrompt = customPrompt != null && !customPrompt.isBlank() ? customPrompt : """
                 당신은 JO-GPT 어시스턴트입니다.
                 항상 한국어로 친절하게 답변하세요.
                 이전 대화 내역을 기억하고 대화 맥락을 유지하며 답변하세요.
@@ -289,33 +263,25 @@ public class GeminiService {
     }
 
     private void showFile(StringBuilder textBuilder, List<Map<String, String>> images, GenerateContentResponse response) {
-        response.candidates().orElse(List.of()).forEach(candidate -> candidate.content()
-                .ifPresent(content -> content.parts().orElse(List.of()).forEach(part -> {
-                    log.info("[ImageGen] part - text={}, inlineData={}", part.text().isPresent(), part.inlineData().isPresent());
-                    part.text().ifPresent(textBuilder::append);
-                    part.inlineData().ifPresent(blob -> blob.data().ifPresent(data -> {
-                        log.info("[ImageGen] 이미지 추출 성공 mimeType={}, size={}bytes", blob.mimeType().orElse("unknown"), data.length);
-                        Map<String, String> img = new LinkedHashMap<>();
-                        img.put("mimeType", blob.mimeType().orElse("image/png"));
-                        img.put("data", Base64.getEncoder().encodeToString(data));
-                        images.add(img);
-                    }));
-                })));
+        response.candidates().orElse(List.of()).forEach(candidate -> candidate.content().ifPresent(content -> content.parts().orElse(List.of()).forEach(part -> {
+            log.info("[ImageGen] part - text={}, inlineData={}", part.text().isPresent(), part.inlineData().isPresent());
+            part.text().ifPresent(textBuilder::append);
+            part.inlineData().ifPresent(blob -> blob.data().ifPresent(data -> {
+                log.info("[ImageGen] 이미지 추출 성공 mimeType={}, size={}bytes", blob.mimeType().orElse("unknown"), data.length);
+                Map<String, String> img = new LinkedHashMap<>();
+                img.put("mimeType", blob.mimeType().orElse("image/png"));
+                img.put("data", Base64.getEncoder().encodeToString(data));
+                images.add(img);
+            }));
+        })));
     }
 
     private GenerateContentConfig generateContentConfigs(Content systemInstruction) {
-        return GenerateContentConfig.builder()
-                .systemInstruction(systemInstruction)
-                .responseModalities("TEXT", "IMAGE")
-                .maxOutputTokens(2048)
-                .build();
+        return GenerateContentConfig.builder().systemInstruction(systemInstruction).responseModalities("TEXT", "IMAGE").maxOutputTokens(2048).build();
     }
 
     private Content systemInstruction(String systemText) {
-        return Content.builder()
-                .role("system")
-                .parts(Part.fromText(systemText))
-                .build();
+        return Content.builder().role("system").parts(Part.fromText(systemText)).build();
     }
 
     private List<Content> buildContents(List<Message> history, List<Part> parts) {
@@ -332,9 +298,7 @@ public class GeminiService {
         List<Part> parts = new ArrayList<>();
         parts.add(Part.fromText(userMessage));
         if (files != null) {
-            files.stream()
-                    .filter(f -> f.getMimeType() != null && f.getData() != null)
-                    .forEach(f -> parts.add(Part.fromBytes(Base64.getDecoder().decode(f.getData()), f.getMimeType())));
+            files.stream().filter(f -> f.getMimeType() != null && f.getData() != null).forEach(f -> parts.add(Part.fromBytes(Base64.getDecoder().decode(f.getData()), f.getMimeType())));
         }
         return parts;
     }
@@ -351,13 +315,7 @@ public class GeminiService {
             return;
         }
 
-        List<Document> existing = vectorStore.similaritySearch(
-                SearchRequest.builder()
-                        .query(llmAnswer)
-                        .topK(1)
-                        .similarityThreshold(0.9)
-                        .build()
-        );
+        List<Document> existing = vectorStore.similaritySearch(SearchRequest.builder().query(llmAnswer).topK(1).similarityThreshold(0.9).build());
 
         if (!existing.isEmpty()) {
             log.info("[saveToVectorStore] 유사 문서 이미 존재 → 저장 생략");

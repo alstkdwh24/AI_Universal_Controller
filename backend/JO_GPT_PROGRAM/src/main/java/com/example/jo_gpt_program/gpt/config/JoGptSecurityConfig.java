@@ -51,8 +51,10 @@ public class JoGptSecurityConfig {
                     "https://agentcloudllm.me"));
             cors.setAllowedMethods(Collections.singletonList("*"));
             cors.setAllowedHeaders(Arrays.asList(
-                    "Authorization", "Content-Type", "Cache-Control",
-                    "X-Requested-With", "X-Model", "X-Custom-Prompt", "X-NCP-APIGW-API-KEY-ID", "X-NCP-APIGW-API-KEY"));
+                    "Authorization", "Content-Type", "Cache-Control","Accept",
+                    "X-Requested-With", "X-Model", "X-Custom-Prompt",
+                    "X-NCP-APIGW-API-KEY-ID", "X-NCP-APIGW-API-KEY",
+                    "Last-Event-ID"));
             cors.setAllowCredentials(true);
             cors.setExposedHeaders(Arrays.asList("Authorization", "Set-Cookie"));
             cors.setMaxAge(3600L);
@@ -69,7 +71,8 @@ public class JoGptSecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/contents/**", "/auth/**", "/connect/**") // ← /connect/** 추가!
+                        // ✅ /alert/** 제거 → 인증 필요!
+                        .requestMatchers("/contents/**", "/auth/**", "/connect/**")
                         .permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex

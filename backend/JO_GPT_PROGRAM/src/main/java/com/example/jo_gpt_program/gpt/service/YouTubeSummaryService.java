@@ -24,17 +24,23 @@ public class YouTubeSummaryService {
     }
     // 자바에서 Python 스트립트를 실행하서 유튜브 자막을 가져오는 코드
     public String getTranscript(String videoId) throws Exception {
-        // 파이썬 스크립트 실행
-        ProcessBuilder pb = new ProcessBuilder("python", "-c",
+        // ✅ 신버전 1.2.4+ API 방식으로 수정 : YouTubeTranscriptApi().fetch()
+        ProcessBuilder pb = new ProcessBuilder("python3", "-c",
                 "from youtube_transcript_api import YouTubeTranscriptApi;" +
-                "t=YouTubeTranscriptApi.get_transcript('" + videoId + "',languages=['ko','en']);" +
-                "print(' '.join([x['text'] for x in t]))");
+                "t=YouTubeTranscriptApi().fetch('" + videoId + "',languages=['ko','en']);" +
+                "print(' '.join([s.text for s in t]))");
         // 에러 메시지도 출력 스트림에 합침
         pb.redirectErrorStream(true);
         // 파이썬 프로세스 실제 실행 시작
         Process p = pb.start();
+        // 에러 처리 추가 - 실패 시 명확한 메시지 반환
+        String result = new String(p.getInputStream().readAllBytes());
+        int exitCode = p.waitFor();
+        if (exitCode != 0) {
+            throw new Exception("자막을 가져올 수 없는 영상입니다: " + result);
+        }
         // 파이썬이 출력한 내용 자바로 가져오기
-        return new String(p.getInputStream().readAllBytes());
+        return result;
     }
 
     public String summarize(String youtubeUrl) throws Exception {
@@ -54,4 +60,3 @@ public class YouTubeSummaryService {
                 .content();
     }
 }
-

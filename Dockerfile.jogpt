@@ -18,6 +18,10 @@ RUN mkdir -p backend/AgentProgram backend/ProgramLog && \
 RUN chmod +x gradlew && ./gradlew :JO_GPT_PROGRAM:bootJar --no-daemon
 
 FROM amazoncorretto:17-alpine-jdk
+# ✅ alpine은 apk 패키지 매니저 사용 (apt-get 아님!)
+RUN apk add --no-cache python3 py3-pip
+# ✅ --break-system-packages로 설치
+RUN pip3 install youtube-transcript-api --break-system-packages
 COPY --from=builder /workspace/backend/JO_GPT_PROGRAM/build/libs/*.jar app.jar
 EXPOSE 8082
 ENTRYPOINT ["java", "-jar", "/app.jar"]
